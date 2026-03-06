@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Send, FileEdit, MessageSquare, Play, Eye, Code } from "lucide-react";
+import joplin from "../../fake-joplin";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -20,12 +21,30 @@ export default function Home() {
     { role: "ai", content: "Hello! How can I help you with your templates today?" },
   ]);
 
+  useEffect(() => {
+    const initPlugin = async () => {
+      try {
+        // Expose joplin globally if the plugin expects it
+        (window as any).joplin = joplin;
+
+        console.log("Loading plugin...");
+        // We use require because it's a non-module JS file usually
+        require("../../templates-plugin/index.js");
+        console.log("Plugin loaded successfully");
+      } catch (error) {
+        console.error("Error loading plugin:", error);
+      }
+    };
+
+    initPlugin();
+  }, []);
+
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
-    
+
     setMessages((prev) => [...prev, { role: "user", content: chatInput }]);
     setChatInput("");
-    
+
     // Simulate AI response
     setTimeout(() => {
       setMessages((prev) => [
@@ -81,18 +100,16 @@ export default function Home() {
             <div className={styles.headerActions}>
               <div className={styles.toggleGroup}>
                 <button
-                  className={`${styles.toggleButton} ${
-                    previewMode === "source" ? styles.toggleActive : ""
-                  }`}
+                  className={`${styles.toggleButton} ${previewMode === "source" ? styles.toggleActive : ""
+                    }`}
                   onClick={() => setPreviewMode("source")}
                   title="Show Source"
                 >
                   <Code size={14} />
                 </button>
                 <button
-                  className={`${styles.toggleButton} ${
-                    previewMode === "rendered" ? styles.toggleActive : ""
-                  }`}
+                  className={`${styles.toggleButton} ${previewMode === "rendered" ? styles.toggleActive : ""
+                    }`}
                   onClick={() => setPreviewMode("rendered")}
                   title="Show Rendered"
                 >
@@ -141,9 +158,8 @@ export default function Home() {
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`${styles.chatMessage} ${
-                msg.role === "ai" ? styles.aiMessage : styles.userMessage
-              }`}
+              className={`${styles.chatMessage} ${msg.role === "ai" ? styles.aiMessage : styles.userMessage
+                }`}
             >
               {msg.content}
             </div>
