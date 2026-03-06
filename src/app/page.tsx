@@ -1,66 +1,140 @@
-import Image from "next/image";
+"use client";
+
+import React, { useState } from "react";
+import Editor from "@monaco-editor/react";
+import { Send, FileEdit, MessageSquare, Play } from "lucide-react";
 import styles from "./page.module.css";
 
 export default function Home() {
+  const [editor1Content, setEditor1Content] = useState<string | undefined>(
+    "# Template Editor\n\nStart typing your Joplin template here..."
+  );
+  const [editor2Content, setEditor2Content] = useState<string | undefined>(
+    "# Preview\n\nClick 'Try it out' to see the result here."
+  );
+  const [chatInput, setChatInput] = useState("");
+  const [messages, setMessages] = useState([
+    { role: "ai", content: "Hello! How can I help you with your templates today?" },
+  ]);
+
+  const handleSendMessage = () => {
+    if (!chatInput.trim()) return;
+    
+    setMessages((prev) => [...prev, { role: "user", content: chatInput }]);
+    setChatInput("");
+    
+    // Simulate AI response
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", content: "I'm a placeholder AI. I received your message: " + chatInput },
+      ]);
+    }, 1000);
+  };
+
+  const handleTryItOut = () => {
+    setEditor2Content(editor1Content);
+  };
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className={styles.container}>
+      {/* Editor Section */}
+      <section className={styles.editorSection}>
+        <div className={styles.editorWrapper}>
+          <div className={styles.editorHeader}>
+            <div className={styles.headerTitle}>
+              <FileEdit size={16} />
+              <span>Template Editor</span>
+            </div>
+            <button className={styles.tryButton} onClick={handleTryItOut}>
+              <Play size={12} fill="currentColor" />
+              Try it out
+            </button>
+          </div>
+          <div className={styles.editor}>
+            <Editor
+              height="100%"
+              language="markdown"
+              theme="vs-dark"
+              value={editor1Content}
+              onChange={(value) => setEditor1Content(value)}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                wordWrap: "on",
+                padding: { top: 16 },
+                lineNumbers: "on",
+                scrollBeyondLastLine: false,
+              }}
             />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
         </div>
-      </main>
+        <div className={styles.editorWrapper}>
+          <div className={styles.editorHeader}>
+            <div className={styles.headerTitle}>
+              <FileEdit size={16} />
+              <span>Preview / Comparison</span>
+            </div>
+          </div>
+          <div className={styles.editor}>
+            <Editor
+              height="100%"
+              language="markdown"
+              theme="vs-dark"
+              value={editor2Content}
+              options={{
+                readOnly: true,
+                minimap: { enabled: false },
+                fontSize: 14,
+                wordWrap: "on",
+                padding: { top: 16 },
+                lineNumbers: "on",
+                scrollBeyondLastLine: false,
+              }}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Chatbot Section */}
+      <section className={styles.chatbotSection}>
+        <div className={styles.editorHeader}>
+          <div className={styles.headerTitle}>
+            <MessageSquare size={16} />
+            <span>AI Assistant</span>
+          </div>
+        </div>
+        <div className={styles.chatHistory}>
+          {messages.map((msg, idx) => (
+            <div
+              key={idx}
+              className={`${styles.chatMessage} ${
+                msg.role === "ai" ? styles.aiMessage : styles.userMessage
+              }`}
+            >
+              {msg.content}
+            </div>
+          ))}
+        </div>
+        <div className={styles.inputArea}>
+          <textarea
+            className={styles.chatInput}
+            placeholder="Ask AI for help with templates..."
+            rows={1}
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
+          />
+          <button className={styles.sendButton} onClick={handleSendMessage}>
+            <Send size={18} />
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
