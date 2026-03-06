@@ -204,6 +204,9 @@ class FakeJoplin implements Partial<Joplin> {
   async shouldUseDarkColors(): Promise<boolean> { return false; }
   require(_path: string): any {
     if (_path === 'buffer') return require('buffer');
+    else if (_path === 'fs-extra') return {
+      pathExists: async (path: any) => { return false }
+    };
     return null;
   }
 }
