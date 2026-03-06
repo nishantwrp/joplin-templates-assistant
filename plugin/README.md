@@ -1,0 +1,1 @@
+Contains the plugin manifest and bundled plugin code.
