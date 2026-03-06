@@ -44,6 +44,38 @@
   gap: 8px;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggleGroup {
+  display: flex;
+  background-color: var(--button-secondary-border);
+  padding: 2px;
+  border-radius: 6px;
+  gap: 2px;
+}
+
+.toggleButton {
+  background: transparent;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.toggleActive {
+  background-color: var(--background);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
 .tryButton {
   background-color: var(--text-primary);
   color: var(--background);
@@ -66,6 +98,68 @@
 .editor {
   flex: 1;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.renderedPreview {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background-color: var(--background);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.renderedPreview h1,
+.renderedPreview h2,
+.renderedPreview h3 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.renderedPreview h1 { font-size: 2em; border-bottom: 1px solid var(--button-secondary-border); padding-bottom: 0.3em; }
+.renderedPreview h2 { font-size: 1.5em; border-bottom: 1px solid var(--button-secondary-border); padding-bottom: 0.3em; }
+
+.renderedPreview p { margin-bottom: 16px; }
+
+.renderedPreview code {
+  padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 85%;
+  background-color: var(--button-secondary-hover);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+}
+
+.renderedPreview pre {
+  padding: 16px;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: var(--button-secondary-hover);
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.renderedPreview pre code {
+  padding: 0;
+  background-color: transparent;
+}
+
+.renderedPreview ul, 
+.renderedPreview ol {
+  padding-left: 2em;
+  margin-bottom: 16px;
+}
+
+.renderedPreview blockquote {
+  padding: 0 1em;
+  color: var(--text-secondary);
+  border-left: 0.25em solid var(--button-secondary-border);
+  margin-bottom: 16px;
 }
 
 .chatbotSection {
