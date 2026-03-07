@@ -16,7 +16,8 @@ import {
   ChevronRight, 
   Info,
   Tag as TagIcon,
-  Calendar
+  Calendar,
+  Folder
 } from "lucide-react";
 import { joplin, createNoteWithTemplate } from "../../fake-joplin";
 import styles from "./page.module.css";
@@ -262,6 +263,13 @@ export default function Home() {
                         <div className={styles.metadataItem}>
                           <span className={styles.metadataLabel}>Title</span>
                           <span className={styles.metadataValue}>{lastCreatedNote.title || "Untitled"}</span>
+                        </div>
+                        <div className={styles.metadataItem}>
+                          <span className={styles.metadataLabel}>Notebook</span>
+                          <span className={styles.metadataValue}>
+                            <Folder size={12} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                            {lastCreatedNote.folderId || "Default"}
+                          </span>
                         </div>
                         <div className={styles.metadataItem}>
                           <span className={styles.metadataLabel}>Tags</span>
