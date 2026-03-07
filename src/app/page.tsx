@@ -5,7 +5,7 @@ import Editor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Send, FileEdit, MessageSquare, Play, Eye, Code } from "lucide-react";
-import joplin from "../../fake-joplin";
+import { joplin, createNoteWithTemplate } from "../../fake-joplin";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -55,7 +55,7 @@ export default function Home() {
   };
 
   const handleTryItOut = () => {
-    setEditor2Content(editor1Content);
+    createNoteWithTemplate(editor1Content ?? "");
   };
 
   return (
