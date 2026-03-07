@@ -10,12 +10,28 @@ export async function POST(req: NextRequest) {
     let responseText = '';
     let suggestedTemplate = currentTemplate;
 
-    if (provider === 'gemini') {
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
-      const systemContext = `You are a Joplin Template Assistant. 
-      The user is working on a Joplin template (Markdown with Handlebars-like variables).
+    const systemContext = `You are Albus. An assistant that will help users write joplin templates.
+
+      Joplin is an open-source markdown based note taking app. A joplin workspace is collection of notebook.
+      A notebook is a collection of multiple notes. A note can have multiple tags. A note can either be a
+      "plain note" or a "todo". The difference b/w the two is that a "todo" can be crossed out and have 
+      a due date & time.
+
+      Templates plugin is a joplin plugin that can help users create generic templates and create new notes and
+      todos from those user-defined templates.
+
+      You are integrated inside a joplin playground. So, some features in the actual joplin app are not supported
+      in the playground. Here are some details about the playground evironment; on trying out the template
+      the new note created is always a "todo", the id of the notebook is "current-notebook-id", the user locale
+      is hardcoded to "en-US", user date format is hardcoded to "YYYY-MM-DD" and time format is hardcoded to "HH:mm".
+      The playground doesn't support any settings, menu options, plugin functions like "default templates", etc.
+
+      Note that users ultimately want templates in context of their real joplin app. If the user has question around the features
+      not supported in playground, please answer using the plugin documentation.
+    
+      The plugin internally uses Handlebars.js for templating. Please refer to the following
+      plugin documentation
+
       Current Template:
       \`\`\`markdown
       ${currentTemplate}
@@ -28,12 +44,17 @@ export async function POST(req: NextRequest) {
       Respond ONLY in JSON format:
       {
         "response": "your textual response here",
+        "updateTemplate": "a boolean representing whether or not the template content needs to be updated. can be false if user can be helped with just a text response.", 
         "suggestedTemplate": "the full updated markdown template here"
       }`;
 
+    if (provider === 'gemini') {
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
       const result = await model.generateContent([systemContext, prompt]);
       const text = result.response.text();
-      
+
       // Attempt to parse JSON from the response (in case the model adds markdown backticks)
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
@@ -58,7 +79,7 @@ export async function POST(req: NextRequest) {
       }`;
 
       const completion = await openai.chat.completions.create({
-        model: process.env.OPENAI_MODEL || "gpt-4o",
+        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Current Template:\n${currentTemplate}\n\nUser Prompt: ${prompt}` }
