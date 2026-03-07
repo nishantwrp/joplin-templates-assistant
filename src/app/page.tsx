@@ -1,10 +1,23 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send, FileEdit, MessageSquare, Play, Eye, Code, AlertCircle } from "lucide-react";
+import { 
+  Send, 
+  FileEdit, 
+  MessageSquare, 
+  Play, 
+  Eye, 
+  Code, 
+  AlertCircle, 
+  ChevronDown, 
+  ChevronRight, 
+  Info,
+  Tag as TagIcon,
+  Calendar
+} from "lucide-react";
 import { joplin, createNoteWithTemplate } from "../../fake-joplin";
 import styles from "./page.module.css";
 
@@ -15,6 +28,8 @@ export default function Home() {
   const [editor2Content, setEditor2Content] = useState<string | undefined>(
     "# Preview\n\nClick 'Try it out' to see the result here."
   );
+  const [lastCreatedNote, setLastCreatedNote] = useState<any>(null);
+  const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
   const [previewMode, setPreviewMode] = useState<"source" | "rendered">("source");
   const [chatInput, setChatInput] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +37,7 @@ export default function Home() {
     { role: "ai", content: "Hello! How can I help you with your templates today?" },
   ]);
   const [isDarkMode, setIsDarkMode] = useState(false);
-
+  
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogHtml, setDialogHtml] = useState("");
@@ -30,6 +45,12 @@ export default function Home() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const chatHistoryRef = useRef<HTMLDivElement>(null);
+  
+  // Track latest editor content via ref to avoid stale closures in handleTryItOut
+  const editor1ContentRef = useRef(editor1Content);
+  useEffect(() => {
+    editor1ContentRef.current = editor1Content;
+  }, [editor1Content]);
 
   // Initialize plugin and detect system theme
   useEffect(() => {
@@ -73,20 +94,21 @@ export default function Home() {
     }, 1000);
   };
 
-  const variableInputsCallback = (html: string) => {
+  const variableInputsCallback = useCallback((html: string) => {
     setDialogHtml(html);
     setIsDialogOpen(true);
     return new Promise<any>((resolve) => {
       dialogResolverRef.current = resolve;
     });
-  };
+  }, []);
 
   const handleDialogClose = (action: 'ok' | 'cancel') => {
-    if (!dialogResolverRef.current) return;
+    const resolver = dialogResolverRef.current;
+    if (!resolver) return;
 
-    if (action === 'cancel') {
-      dialogResolverRef.current({ id: 'cancel' });
-    } else {
+    let result: any = { id: 'cancel' };
+
+    if (action === 'ok') {
       const formData: any = {};
       if (formRef.current) {
         const data = new FormData(formRef.current);
@@ -94,14 +116,13 @@ export default function Home() {
         data.forEach((value, key) => {
           variables[key] = value;
         });
-        // The Joplin plugin expects formData: { [formName]: { [fieldName]: value } }
-        // We'll use "variables" as the default form name if not found
         const formName = formRef.current.name || "variables";
         formData[formName] = variables;
       }
-      dialogResolverRef.current({ id: 'ok', formData });
+      result = { id: 'ok', formData };
     }
 
+    resolver(result);
     setIsDialogOpen(false);
     setDialogHtml("");
     dialogResolverRef.current = null;
@@ -110,9 +131,12 @@ export default function Home() {
   const handleTryItOut = async () => {
     setError(null);
     try {
-      const note = await createNoteWithTemplate(editor1Content ?? "", variableInputsCallback);
-      if (!!note) {
+      const currentContent = editor1ContentRef.current ?? "";
+      const note = await createNoteWithTemplate(currentContent, variableInputsCallback);
+      if (note) {
+        setLastCreatedNote(note);
         setEditor2Content(note.body);
+        setIsMetadataExpanded(true); // Auto-expand when a new note is created
       }
     } catch (err: any) {
       setError(err.message || "An unknown error occurred during template parsing.");
@@ -120,6 +144,11 @@ export default function Home() {
   };
 
   const editorTheme = isDarkMode ? "vs-dark" : "light";
+
+  const formatDate = (timestamp?: number) => {
+    if (!timestamp) return "Not set";
+    return new Date(timestamp).toLocaleString();
+  };
 
   return (
     <div className={styles.container}>
@@ -129,8 +158,8 @@ export default function Home() {
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>Template Variables</div>
             <div className={styles.modalBody}>
-              <div
-                dangerouslySetInnerHTML={{ __html: dialogHtml }}
+              <div 
+                dangerouslySetInnerHTML={{ __html: dialogHtml }} 
                 ref={(el) => {
                   if (el) {
                     const form = el.querySelector('form');
@@ -216,28 +245,78 @@ export default function Home() {
                 </div>
                 {error}
               </div>
-            ) : previewMode === "source" ? (
-              <Editor
-                height="100%"
-                language="markdown"
-                theme={editorTheme}
-                value={editor2Content}
-                options={{
-                  readOnly: true,
-                  minimap: { enabled: false },
-                  fontSize: 14,
-                  wordWrap: "on",
-                  padding: { top: 16 },
-                  lineNumbers: "on",
-                  scrollBeyondLastLine: false,
-                }}
-              />
             ) : (
-              <div className={styles.renderedPreview}>
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {editor2Content || ""}
-                </ReactMarkdown>
-              </div>
+              <>
+                {lastCreatedNote && (
+                  <div className={styles.metadataSection}>
+                    <div 
+                      className={styles.metadataHeader} 
+                      onClick={() => setIsMetadataExpanded(!isMetadataExpanded)}
+                    >
+                      {isMetadataExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      <Info size={14} />
+                      <span>Note Metadata</span>
+                    </div>
+                    {isMetadataExpanded && (
+                      <div className={styles.metadataContent}>
+                        <div className={styles.metadataItem}>
+                          <span className={styles.metadataLabel}>Title</span>
+                          <span className={styles.metadataValue}>{lastCreatedNote.title || "Untitled"}</span>
+                        </div>
+                        <div className={styles.metadataItem}>
+                          <span className={styles.metadataLabel}>Tags</span>
+                          <div className={styles.tagList}>
+                            {lastCreatedNote.tags && lastCreatedNote.tags.length > 0 ? (
+                              lastCreatedNote.tags.map((tag: string, i: number) => (
+                                <span key={i} className={styles.tag}>
+                                  <TagIcon size={10} style={{ marginRight: '4px' }} />
+                                  {tag}
+                                </span>
+                              ))
+                            ) : (
+                              <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>No tags</span>
+                            )}
+                          </div>
+                        </div>
+                        {lastCreatedNote.todo_due !== undefined && (
+                          <div className={styles.metadataItem}>
+                            <span className={styles.metadataLabel}>Due</span>
+                            <span className={styles.metadataValue}>
+                              <Calendar size={12} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                              {formatDate(lastCreatedNote.todo_due)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                  {previewMode === "source" ? (
+                    <Editor
+                      height="100%"
+                      language="markdown"
+                      theme={editorTheme}
+                      value={editor2Content}
+                      options={{
+                        readOnly: true,
+                        minimap: { enabled: false },
+                        fontSize: 14,
+                        wordWrap: "on",
+                        padding: { top: 16 },
+                        lineNumbers: "on",
+                        scrollBeyondLastLine: false,
+                      }}
+                    />
+                  ) : (
+                    <div className={styles.renderedPreview}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {editor2Content || ""}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>

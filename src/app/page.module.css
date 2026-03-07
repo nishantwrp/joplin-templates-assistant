@@ -111,6 +111,67 @@
   line-height: 1.6;
 }
 
+.metadataSection {
+  background-color: var(--button-secondary-hover);
+  border-bottom: 1px solid var(--button-secondary-border);
+}
+
+.metadataHeader {
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.metadataHeader:hover {
+  background-color: var(--button-secondary-border);
+}
+
+.metadataContent {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.metadataItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.metadataLabel {
+  width: 60px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.metadataValue {
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  background-color: var(--button-secondary-border);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
 .renderedPreview h1,
 .renderedPreview h2,
 .renderedPreview h3 {
