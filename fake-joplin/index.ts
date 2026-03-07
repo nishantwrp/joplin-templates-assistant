@@ -125,7 +125,7 @@ class FakeJoplinSettings implements Partial<JoplinSettings> {
   async setValue(_key: string, _value: any): Promise<void> { }
   async globalValue(_key: string): Promise<any> {
     if (_key === "locale") return "en-US";
-    if (_key === "dateFormat") return "DD/MM/YYYY";
+    if (_key === "dateFormat") return "YYYY-MM-DD";
     if (_key === "timeFormat") return "HH:mm";
     return null;
   }
