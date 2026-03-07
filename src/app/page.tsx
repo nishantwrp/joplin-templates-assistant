@@ -111,7 +111,6 @@ export default function Home() {
     setError(null);
     try {
       const note = await createNoteWithTemplate(editor1Content ?? "", variableInputsCallback);
-      console.log("returned is: ", note);
       if (!!note) {
         setEditor2Content(note.body);
       }
