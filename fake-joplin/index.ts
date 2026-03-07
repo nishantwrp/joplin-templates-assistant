@@ -41,14 +41,25 @@ interface Note {
 let createNewNoteHandler: () => Promise<void>;
 let currentTemplateContent: string = "";
 let bufferedNote: Note | null = null;
+let errorMessage: string = "";
 
-const createNoteWithTemplate = (content: string): Promise<Note> => {
+// Storage for dialog HTML content
+const dialogContents: Record<string, string> = {};
+let dialogCallback: (html: string) => Promise<DialogResult> = async () => ({ id: 'cancel' });
+
+const createNoteWithTemplate = (content: string, onDialogRequest: (html: string) => Promise<DialogResult>): Promise<Note | null> => {
   bufferedNote = null;
+  errorMessage = "";
   currentTemplateContent = content;
+  dialogCallback = onDialogRequest;
+
   return createNewNoteHandler().then(() => {
     console.info("fake-joplin: created note with template", bufferedNote);
     if (!bufferedNote) {
-      throw new Error("No buffered note found. Please create a bug on github if you're facing this consistently.");
+      if (errorMessage.length > 0) {
+        console.info("fake-joplin: template parsing likely hit an error.");
+        throw new Error(errorMessage);
+      }
     }
     return bufferedNote;
   }, (error) => {
@@ -60,98 +71,37 @@ const createNoteWithTemplate = (content: string): Promise<Note> => {
 class FakeJoplinData implements Partial<JoplinData> {
   async get(_path: Path, _query?: any): Promise<any> {
     if (_path[0] === "search" && _query?.query === "template" && _query?.type === "tag") {
-      console.info("fake-joplin: received search request for 'template' tag");
-      return {
-        items: [
-          {
-            id: "template",
-            name: "template",
-          }
-        ],
-        hasMore: false,
-      };
+      return { items: [{ id: "template", name: "template" }], hasMore: false };
     }
-
     if (_path[0] === "search" && _query?.type === "tag") {
-      console.info("fake-joplin: received search request for tag: ", _query?.query);
-      return {
-        items: [
-          {
-            id: _query?.query ?? "",
-            name: _query?.query ?? "",
-          }
-        ],
-        hasMore: false,
-      };
+      return { items: [{ id: _query?.query ?? "", name: _query?.query ?? "" }], hasMore: false };
     }
-
     if (_path[0] === "tags" && _path[1] === "template" && _path[2] === "notes") {
-      console.info("fake-joplin: received request for 'template' tag notes");
-      return {
-        items: [
-          {
-            id: "template",
-            title: "Template Title",
-            body: currentTemplateContent,
-          }
-        ],
-        hasMore: false,
-      };
+      return { items: [{ id: "template", title: "Template Title", body: currentTemplateContent }], hasMore: false };
     }
-
     return {};
   }
   async post(_path: Path, _query?: any, _body?: any, _files?: any[]): Promise<any> {
     if (_path[0] === "notes") {
-      console.info("fake-joplin: received post request for 'notes'");
-      bufferedNote = {
-        folderId: _body?.parent_id,
-        title: _body?.title,
-        body: _body?.body,
-        tags: []
-      };
-      if (!!_body?.todo_due) {
-        bufferedNote.todo_due = _body?.todo_due;
-      }
-
-      return {
-        id: "new-note-id",
-      }
+      bufferedNote = { folderId: _body?.parent_id, title: _body?.title, body: _body?.body, tags: [] };
+      if (!!_body?.todo_due) bufferedNote.todo_due = _body?.todo_due;
+      return { id: "new-note-id" };
     }
-
     if (_path[0] === "tags" && _path[2] === "notes") {
-      console.info("fake-joplin: received post request for 'tags/:id/notes'");
-
-      if (!bufferedNote) {
-        throw new Error("No buffered note found. Please create a bug on github if you're facing this consistently.");
-      }
-
+      if (!bufferedNote) throw new Error("No buffered note found.");
       bufferedNote.tags.push(_path[1] ?? "");
-
-      return {
-        id: _path[1]
-      };
+      return { id: _path[1] };
     }
-
     return {};
   }
-
   async put(_path: Path, _query?: any, _body?: any, _files?: any[]): Promise<any> {
     if (_path[0] === "notes" && _path[1] === "new-note-id") {
-      console.info("fake-joplin: received put request for 'notes'");
-
-      if (!bufferedNote) {
-        throw new Error("No buffered note found. Please create a bug on github if you're facing this consistently.");
-      }
-
+      if (!bufferedNote) throw new Error("No buffered note found.");
       bufferedNote.folderId = _body?.parent_id ?? bufferedNote.folderId;
       bufferedNote.title = _body?.title ?? bufferedNote.title;
       bufferedNote.body = _body?.body ?? bufferedNote.body;
       bufferedNote.todo_due = _body?.todo_due ?? bufferedNote.todo_due;
-
-      return {
-        id: "new-note-id",
-      }
+      return { id: "new-note-id" };
     }
     return {};
   }
@@ -168,30 +118,15 @@ class FakeJoplinSettings implements Partial<JoplinSettings> {
   async registerSetting(_key: string, _setting: SettingItem): Promise<void> { }
   async registerSection(_name: string, _section: SettingSection): Promise<void> { }
   async value(_key: string): Promise<any> {
-    if (_key == "templatesSource") {
-      console.info("fake-joplin: received request for 'templatesSource' setting");
-      return "tag";
-    }
+    if (_key == "templatesSource") return "tag";
     return null;
   }
   async values(_keys: string[] | string): Promise<Record<string, any>> { return {}; }
   async setValue(_key: string, _value: any): Promise<void> { }
   async globalValue(_key: string): Promise<any> {
-    if (_key === "locale") {
-      console.info("fake-joplin: received request for 'locale' global setting");
-      return "en-US";
-    }
-
-    if (_key === "dateFormat") {
-      console.info("fake-joplin: received request for 'dateFormat' global setting");
-      return "DD/MM/YYYY";
-    }
-
-    if (_key === "timeFormat") {
-      console.info("fake-joplin: received request for 'timeFormat' global setting");
-      return "HH:mm";
-    }
-
+    if (_key === "locale") return "en-US";
+    if (_key === "dateFormat") return "DD/MM/YYYY";
+    if (_key === "timeFormat") return "HH:mm";
     return null;
   }
   async globalValues(_keys: string[]): Promise<any[]> { return []; }
@@ -201,7 +136,6 @@ class FakeJoplinSettings implements Partial<JoplinSettings> {
 class FakeJoplinCommands implements Partial<JoplinCommands> {
   async register(_command: Command): Promise<void> {
     if (_command.name === "createTodoFromTemplate") {
-      console.info("fake-joplin: registered 'createTodoFromTemplate' command");
       createNewNoteHandler = _command.execute;
     }
   }
@@ -210,11 +144,13 @@ class FakeJoplinCommands implements Partial<JoplinCommands> {
 
 class FakeJoplinViewsDialogs implements Partial<JoplinViewsDialogs> {
   async create(_id: string): Promise<string> { return _id; }
-  async setHtml(_handle: string, _html: string): Promise<string> { return ''; }
+  async setHtml(_handle: string, _html: string): Promise<string> {
+    dialogContents[_handle] = _html;
+    return '';
+  }
   async addScript(_handle: string, _script: string): Promise<void> { }
   async open(_handle: string): Promise<DialogResult> {
     if (_handle === "templateSelector") {
-      console.info("fake-joplin: received request to open 'templateSelector' dialog");
       return {
         id: 'ok',
         formData: {
@@ -228,10 +164,16 @@ class FakeJoplinViewsDialogs implements Partial<JoplinViewsDialogs> {
         }
       };
     }
-    return { id: 'ok' };
+
+    // For variable selector, use the HTML set via setHtml
+    const html = dialogContents[_handle] || "";
+    return dialogCallback(html);
   }
   async setButtons(_handle: string, _buttons: ButtonSpec[]): Promise<ButtonSpec[]> { return []; }
-  async showMessageBox(_message: string): Promise<number> { return 0; }
+  async showMessageBox(_message: string): Promise<number> {
+    errorMessage = _message;
+    return 0;
+  }
   async showToast(_toast: Toast): Promise<void> { }
   async showOpenDialog(_options: any): Promise<any> { return null; }
   async setFitToContent(_handle: string, _status: boolean): Promise<boolean> { return true; }
@@ -249,36 +191,24 @@ class FakeJoplinViewsPanels implements Partial<JoplinViewsPanels> {
   async isActive(_handle: string): Promise<boolean> { return true; }
 }
 
-class FakeJoplinViewsEditors implements Partial<JoplinViewsEditors> {
-}
-
-class FakeJoplinViewsNoteList implements Partial<JoplinViewsNoteList> {
-}
-
 class FakeJoplinViews implements Partial<JoplinViews> {
   private dialogs_ = new FakeJoplinViewsDialogs() as unknown as JoplinViewsDialogs;
   private panels_ = new FakeJoplinViewsPanels() as unknown as JoplinViewsPanels;
-  private editors_ = new FakeJoplinViewsEditors() as unknown as JoplinViewsEditors;
-  private noteList_ = new FakeJoplinViewsNoteList() as unknown as JoplinViewsNoteList;
+  private editors_ = {} as any;
+  private noteList_ = {} as any;
 
   get dialogs() { return this.dialogs_; }
   get panels() { return this.panels_; }
   get editors() { return this.editors_; }
   get noteList() { return this.noteList_; }
   get menuItems() {
-    return {
-      create: async (_id: string, _commandName: string, _location: any): Promise<void> => { },
-    } as any;
+    return { create: async () => { } } as any;
   }
   get menus() {
-    return {
-      create: async (_id: string, _label: string, _menuItems: any[]): Promise<void> => { },
-    } as any;
+    return { create: async () => { } } as any;
   }
   get toolbarButtons() {
-    return {
-      create: async (_id: string, _commandName: string, _location: any): Promise<void> => { },
-    } as any;
+    return { create: async () => { } } as any;
   }
 }
 
@@ -291,12 +221,7 @@ class FakeJoplinWorkspace implements Partial<JoplinWorkspace> {
   async onNoteAlarmTrigger(_callback: any): Promise<Disposable> { return {}; }
   async onSyncStart(_callback: any): Promise<Disposable> { return {}; }
   async selectedNote(): Promise<any> { return null; }
-  async selectedFolder(): Promise<any> {
-    console.info("fake-joplin: received request for 'selectedFolder'");
-    return {
-      id: "current-notebook-id"
-    };
-  }
+  async selectedFolder(): Promise<any> { return { id: "current-notebook-id" }; }
   async selectedNoteIds(): Promise<string[]> { return []; }
   async selectedNoteHash(): Promise<string> { return ''; }
   filterEditorContextMenu(_handler: any): void { }
@@ -304,9 +229,7 @@ class FakeJoplinWorkspace implements Partial<JoplinWorkspace> {
 
 class FakeJoplinPlugins implements Partial<JoplinPlugins> {
   async register(plugin: any): Promise<void> {
-    if (plugin.onStart) {
-      await plugin.onStart();
-    }
+    if (plugin.onStart) await plugin.onStart();
   }
   async registerContentScript(_type: string, _id: string, _scriptPath: string): Promise<void> { }
   async dataDir(): Promise<string> { return ''; }
@@ -376,9 +299,7 @@ class FakeJoplin implements Partial<Joplin> {
   async shouldUseDarkColors(): Promise<boolean> { return false; }
   require(_path: string): any {
     if (_path === 'buffer') return require('buffer');
-    else if (_path === 'fs-extra') return {
-      pathExists: async (path: any) => { return false }
-    };
+    if (_path === 'fs-extra') return { pathExists: async () => false };
     return null;
   }
 }

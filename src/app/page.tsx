@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send, FileEdit, MessageSquare, Play, Eye, Code } from "lucide-react";
+import { Send, FileEdit, MessageSquare, Play, Eye, Code, AlertCircle } from "lucide-react";
 import { joplin, createNoteWithTemplate } from "../../fake-joplin";
 import styles from "./page.module.css";
 
@@ -17,18 +17,32 @@ export default function Home() {
   );
   const [previewMode, setPreviewMode] = useState<"source" | "rendered">("source");
   const [chatInput, setChatInput] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState([
     { role: "ai", content: "Hello! How can I help you with your templates today?" },
   ]);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
+  // Dialog State
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogHtml, setDialogHtml] = useState("");
+  const dialogResolverRef = useRef<((value: any) => void) | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const chatHistoryRef = useRef<HTMLDivElement>(null);
+
+  // Initialize plugin and detect system theme
   useEffect(() => {
+    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDarkMode(darkModeMediaQuery.matches);
+
+    const themeListener = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
+    darkModeMediaQuery.addEventListener('change', themeListener);
+
     const initPlugin = async () => {
       try {
-        // Expose joplin globally if the plugin expects it
         (window as any).joplin = joplin;
-
         console.log("Loading plugin...");
-        // We use require because it's a non-module JS file usually
         require("../../templates-plugin/index.js");
         console.log("Plugin loaded successfully");
       } catch (error) {
@@ -37,15 +51,20 @@ export default function Home() {
     };
 
     initPlugin();
+    return () => darkModeMediaQuery.removeEventListener('change', themeListener);
   }, []);
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    if (chatHistoryRef.current) {
+      chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
-
     setMessages((prev) => [...prev, { role: "user", content: chatInput }]);
     setChatInput("");
-
-    // Simulate AI response
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
@@ -54,12 +73,85 @@ export default function Home() {
     }, 1000);
   };
 
-  const handleTryItOut = () => {
-    createNoteWithTemplate(editor1Content ?? "");
+  const variableInputsCallback = (html: string) => {
+    setDialogHtml(html);
+    setIsDialogOpen(true);
+    return new Promise<any>((resolve) => {
+      dialogResolverRef.current = resolve;
+    });
   };
+
+  const handleDialogClose = (action: 'ok' | 'cancel') => {
+    if (!dialogResolverRef.current) return;
+
+    if (action === 'cancel') {
+      dialogResolverRef.current({ id: 'cancel' });
+    } else {
+      const formData: any = {};
+      if (formRef.current) {
+        const data = new FormData(formRef.current);
+        const variables: any = {};
+        data.forEach((value, key) => {
+          variables[key] = value;
+        });
+        // The Joplin plugin expects formData: { [formName]: { [fieldName]: value } }
+        // We'll use "variables" as the default form name if not found
+        const formName = formRef.current.name || "variables";
+        formData[formName] = variables;
+      }
+      dialogResolverRef.current({ id: 'ok', formData });
+    }
+
+    setIsDialogOpen(false);
+    setDialogHtml("");
+    dialogResolverRef.current = null;
+  };
+
+  const handleTryItOut = async () => {
+    setError(null);
+    try {
+      const note = await createNoteWithTemplate(editor1Content ?? "", variableInputsCallback);
+      console.log("returned is: ", note);
+      if (!!note) {
+        setEditor2Content(note.body);
+      }
+    } catch (err: any) {
+      setError(err.message || "An unknown error occurred during template parsing.");
+    }
+  };
+
+  const editorTheme = isDarkMode ? "vs-dark" : "light";
 
   return (
     <div className={styles.container}>
+      {/* Modal Dialog */}
+      {isDialogOpen && (
+        <div className={styles.modalOverlay} onClick={() => handleDialogClose('cancel')}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>Template Variables</div>
+            <div className={styles.modalBody}>
+              <div
+                dangerouslySetInnerHTML={{ __html: dialogHtml }}
+                ref={(el) => {
+                  if (el) {
+                    const form = el.querySelector('form');
+                    if (form) (formRef as any).current = form;
+                  }
+                }}
+              />
+            </div>
+            <div className={styles.modalFooter}>
+              <button className={styles.cancelButton} onClick={() => handleDialogClose('cancel')}>
+                Cancel
+              </button>
+              <button className={styles.tryButton} onClick={() => handleDialogClose('ok')}>
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Editor Section */}
       <section className={styles.editorSection}>
         <div className={styles.editorWrapper}>
@@ -77,7 +169,7 @@ export default function Home() {
             <Editor
               height="100%"
               language="markdown"
-              theme="vs-dark"
+              theme={editorTheme}
               value={editor1Content}
               onChange={(value) => setEditor1Content(value)}
               options={{
@@ -100,16 +192,14 @@ export default function Home() {
             <div className={styles.headerActions}>
               <div className={styles.toggleGroup}>
                 <button
-                  className={`${styles.toggleButton} ${previewMode === "source" ? styles.toggleActive : ""
-                    }`}
+                  className={`${styles.toggleButton} ${previewMode === "source" ? styles.toggleActive : ""}`}
                   onClick={() => setPreviewMode("source")}
                   title="Show Source"
                 >
                   <Code size={14} />
                 </button>
                 <button
-                  className={`${styles.toggleButton} ${previewMode === "rendered" ? styles.toggleActive : ""
-                    }`}
+                  className={`${styles.toggleButton} ${previewMode === "rendered" ? styles.toggleActive : ""}`}
                   onClick={() => setPreviewMode("rendered")}
                   title="Show Rendered"
                 >
@@ -119,11 +209,19 @@ export default function Home() {
             </div>
           </div>
           <div className={styles.editor}>
-            {previewMode === "source" ? (
+            {error ? (
+              <div className={styles.errorContainer}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontWeight: 'bold' }}>
+                  <AlertCircle size={18} />
+                  Template Error
+                </div>
+                {error}
+              </div>
+            ) : previewMode === "source" ? (
               <Editor
                 height="100%"
                 language="markdown"
-                theme="vs-dark"
+                theme={editorTheme}
                 value={editor2Content}
                 options={{
                   readOnly: true,
@@ -154,12 +252,11 @@ export default function Home() {
             <span>AI Assistant</span>
           </div>
         </div>
-        <div className={styles.chatHistory}>
+        <div className={styles.chatHistory} ref={chatHistoryRef}>
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`${styles.chatMessage} ${msg.role === "ai" ? styles.aiMessage : styles.userMessage
-                }`}
+              className={`${styles.chatMessage} ${msg.role === "ai" ? styles.aiMessage : styles.userMessage}`}
             >
               {msg.content}
             </div>
