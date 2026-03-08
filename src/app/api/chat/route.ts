@@ -3,6 +3,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import { readFileSync } from 'fs';
 import path from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const docsPath = path.join(process.cwd(), 'templates-plugin', 'docs.md');
 let documentation = readFileSync(docsPath, 'utf8');
