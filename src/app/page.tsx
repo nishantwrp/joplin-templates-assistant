@@ -40,7 +40,7 @@ interface Message {
 
 export default function Home() {
   const [editor1Content, setEditor1Content] = useState<string | undefined>(
-    "# Template Editor\n\nStart typing your Joplin template here..."
+    "<!-- \n  Templates Plugin: v3.0.0\n  Documentation: https://github.com/joplin/plugin-templates\n-->\n\n# Template Editor\n\nStart typing your Joplin template here..."
   );
   const [editor2Content, setEditor2Content] = useState<string | undefined>(
     "# Preview\n\nClick 'Try it out' to see the result here."
