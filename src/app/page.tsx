@@ -4,30 +4,32 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import {
-  Send,
-  FileEdit,
-  MessageSquare,
-  Play,
-  Eye,
-  Code,
-  AlertCircle,
-  ChevronDown,
-  ChevronRight,
+import { 
+  Send, 
+  FileEdit, 
+  MessageSquare, 
+  Play, 
+  Eye, 
+  Code, 
+  AlertCircle, 
+  ChevronDown, 
+  ChevronRight, 
   Info,
   Tag as TagIcon,
   Calendar,
   Folder,
   ThumbsUp,
-  ThumbsDown
+  ThumbsDown,
+  Heart,
+  ExternalLink
 } from "lucide-react";
 import { sendGAEvent } from '@next/third-parties/google';
 import { joplin, createNoteWithTemplate } from "../../fake-joplin";
 import styles from "./page.module.css";
 
 interface Message {
-  role: "ai" | "user";
-  content: string;
+  role: "ai" | "user" | "system";
+  content: string | React.ReactNode;
   llm?: {
     provider: string;
     model: string;
@@ -47,12 +49,41 @@ export default function Home() {
   const [previewMode, setPreviewMode] = useState<"source" | "rendered">("source");
   const [chatInput, setChatInput] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "ai", content: "Hello! I'm Albus. How can I help you with your Joplin templates today?" },
-  ]);
+  
+  const initialMessages: Message[] = [
+    { 
+      role: "ai", 
+      content: "Hello! I'm Albus. How can I help you with your Joplin templates today?" 
+    },
+    { 
+      role: "system", 
+      content: (
+        <div className={styles.sponsorshipMessage}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Heart size={14} fill="#e11d48" color="#e11d48" />
+            <strong>Support Albus & Templates Plugin</strong>
+          </div>
+          <p style={{ fontSize: '13px', lineHeight: '1.5', marginBottom: '12px' }}>
+            This assistant and the templates-plugin are built by <a href="https://nishantwrp.com" target="_blank" rel="noopener">Nishant Mittal</a>. 
+            Your support helps cover LLM costs and future development!
+          </p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <a href="https://github.com/sponsors/nishantwrp" target="_blank" rel="noopener" className={styles.supportLink}>
+              GitHub Sponsors <ExternalLink size={12} />
+            </a>
+            <a href="https://buymeacoffee.com/nishantwrp" target="_blank" rel="noopener" className={styles.supportLink}>
+              Buy Me a Coffee <ExternalLink size={12} />
+            </a>
+          </div>
+        </div>
+      )
+    },
+  ];
+
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isChatLoading, setIsChatLoading] = useState(false);
-
+  
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogHtml, setDialogHtml] = useState("");
@@ -60,7 +91,7 @@ export default function Home() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const chatHistoryRef = useRef<HTMLDivElement>(null);
-
+  
   // Track latest editor content via ref to avoid stale closures in handleTryItOut
   const editor1ContentRef = useRef(editor1Content);
   useEffect(() => {
@@ -137,8 +168,8 @@ export default function Home() {
 
         setMessages((prev) => [
           ...prev,
-          {
-            role: "ai",
+          { 
+            role: "ai", 
             content: data.response,
             llm: data.llm
           },
@@ -266,8 +297,8 @@ export default function Home() {
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>Template Variables</div>
             <div className={styles.modalBody}>
-              <div
-                dangerouslySetInnerHTML={{ __html: dialogHtml }}
+              <div 
+                dangerouslySetInnerHTML={{ __html: dialogHtml }} 
                 ref={(el) => {
                   if (el) {
                     const form = el.querySelector('form');
@@ -357,8 +388,8 @@ export default function Home() {
               <>
                 {lastCreatedNote && (
                   <div className={styles.metadataSection}>
-                    <div
-                      className={styles.metadataHeader}
+                    <div 
+                      className={styles.metadataHeader} 
                       onClick={() => setIsMetadataExpanded(!isMetadataExpanded)}
                     >
                       {isMetadataExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -441,9 +472,9 @@ export default function Home() {
       <section className={styles.chatbotSection}>
         <div className={styles.editorHeader}>
           <div className={styles.headerTitle}>
-            <a
-              href="https://github.com/albusbot"
-              target="_blank"
+            <a 
+              href="https://github.com/albusbot" 
+              target="_blank" 
               rel="noopener noreferrer"
               className={styles.headerLink}
             >
@@ -460,20 +491,23 @@ export default function Home() {
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`${styles.chatMessage} ${msg.role === "ai" ? styles.aiMessage : styles.userMessage
-                } ${msg.role === "ai" && idx !== 0 ? styles.aiMessageWithFeedback : ""}`}
+              className={`${styles.chatMessage} ${
+                msg.role === "ai" ? styles.aiMessage : 
+                msg.role === "user" ? styles.userMessage :
+                styles.aiMessage // System messages also look like AI but with unique styles
+              } ${msg.role === "ai" && idx > 1 ? styles.aiMessageWithFeedback : ""}`}
             >
               {msg.content}
-              {msg.role === "ai" && idx !== 0 && (
+              {msg.role === "ai" && idx > 1 && (
                 <div className={styles.feedbackButtons}>
-                  <button
+                  <button 
                     className={`${styles.feedbackButton} ${msg.feedback === "up" ? styles.feedbackButtonActive : ""}`}
                     onClick={() => handleFeedback(idx, "up")}
                     title="Helpful"
                   >
                     <ThumbsUp size={12} fill={msg.feedback === "up" ? "currentColor" : "none"} />
                   </button>
-                  <button
+                  <button 
                     className={`${styles.feedbackButton} ${msg.feedback === "down" ? styles.feedbackButtonActive : ""}`}
                     onClick={() => handleFeedback(idx, "down")}
                     title="Not helpful"
@@ -507,8 +541,8 @@ export default function Home() {
               }
             }}
           />
-          <button
-            className={styles.sendButton}
+          <button 
+            className={styles.sendButton} 
             onClick={handleSendMessage}
             disabled={isChatLoading || !chatInput.trim()}
           >

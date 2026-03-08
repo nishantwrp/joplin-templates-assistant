@@ -427,6 +427,44 @@
   align-self: flex-end;
 }
 
+.sponsorshipMessage {
+  padding: 4px 0;
+}
+
+.sponsorshipMessage a {
+  color: #2563eb;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.sponsorshipMessage a:hover {
+  text-decoration: underline;
+}
+
+.supportLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: var(--button-secondary-border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary) !important;
+  transition: background-color 0.2s;
+}
+
+.supportLink:hover {
+  background-color: var(--button-secondary-hover);
+  text-decoration: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sponsorshipMessage a {
+    color: #60a5fa;
+  }
+}
+
 .inputArea {
   display: flex;
   gap: 8px;
