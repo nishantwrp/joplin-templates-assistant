@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Apple
 .DS_Store
+
+# Custom
+TODOs.md
