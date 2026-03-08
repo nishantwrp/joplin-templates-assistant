@@ -114,7 +114,7 @@ export default function Home() {
           ...prev,
           { role: "ai", content: data.response },
         ]);
-        if (data.suggestedTemplate) {
+        if (data.updateTemplate && data.suggestedTemplate) {
           setEditor1Content(data.suggestedTemplate);
         }
       }

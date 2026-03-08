@@ -74,6 +74,10 @@ export async function POST(req: NextRequest) {
       \`\`\`
     `;
 
+  setTimeout(() => {
+    throw new Error("CUSTOM_TIMEOUT_ERROR");
+  }, llmConfig.timeout_secs * 1000);
+
   try {
     if (llmProvider === 'gemini') {
       const genAI = new GoogleGenerativeAI(process.env.gemini_api_key || '');
@@ -122,6 +126,10 @@ export async function POST(req: NextRequest) {
       } // For debugging/transparency
     });
   } catch (error: any) {
+    if (error.message === "CUSTOM_TIMEOUT_ERROR") {
+      return NextResponse.json({ error: "The llm model took too long to respond. Please try again or try a different prompt." }, { status: 504 });
+    }
+
     console.error('some error occurred while processing user prompt', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
