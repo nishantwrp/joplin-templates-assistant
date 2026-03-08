@@ -4,6 +4,7 @@ import OpenAI from 'openai';
 import { readFileSync } from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
+import frontendConfig from '../../../frontend_config.json';
 
 dotenv.config();
 
@@ -13,17 +14,41 @@ let documentation = readFileSync(docsPath, 'utf8');
 const configPath = path.join(process.cwd(), 'src', 'app', 'api', 'llm_config.json');
 let llmConfig = JSON.parse(readFileSync(configPath, 'utf8'));
 
+async function sendTelemetryEvent(eventName: string, params: Record<string, any> = {}) {
+  try {
+    const body = {
+      client_id: 'backend_service', // Unique ID for the backend
+      events: [{
+        name: eventName,
+        params: params,
+      }],
+    };
+
+    await fetch(
+      `https://www.google-analytics.com/mp/collect?measurement_id=${frontendConfig.googleAnalyticsId}&api_secret=${process.env.ga_api_key}`,
+      {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }
+    );
+  } catch (error) {
+    console.error('Failed to send telemetry to GA:', error);
+  }
+}
+
 export async function POST(req: NextRequest) {
   const { prompt, currentTemplate } = await req.json();
 
   // Randomly select provider based on split ratio
   const llmProvider = Math.random() < llmConfig.geminiToOpenaiSplitRatio ? 'gemini' : 'openai';
   const llmModel = llmProvider === 'gemini' ? llmConfig.geminiModel : llmConfig.openaiModel;
+
   console.info("routing request to llm provider ", llmProvider, " with model ", llmModel);
 
-  let responseText = '';
-  let updateTemplate = false;
-  let suggestedTemplate = currentTemplate;
+  await sendTelemetryEvent('api_request_start', {
+    llm_provider: llmProvider,
+    llm_model: llmModel
+  });
 
   const systemContext = `You are Albus. An assistant that will help users write joplin templates.
 
@@ -74,11 +99,7 @@ export async function POST(req: NextRequest) {
       \`\`\`
     `;
 
-  setTimeout(() => {
-    throw new Error("CUSTOM_TIMEOUT_ERROR");
-  }, llmConfig.timeout_secs * 1000);
-
-  try {
+  const aiPromise = (async () => {
     if (llmProvider === 'gemini') {
       const genAI = new GoogleGenerativeAI(process.env.gemini_api_key || '');
       const model = genAI.getGenerativeModel({ model: llmModel });
@@ -88,15 +109,11 @@ export async function POST(req: NextRequest) {
 
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const data = JSON.parse(jsonMatch[0]);
-        responseText = data.response;
-        suggestedTemplate = data.suggestedTemplate;
-        updateTemplate = data.updateTemplate;
+        return JSON.parse(jsonMatch[0]);
       } else {
-        responseText = text;
+        return { response: text, suggestedTemplate: currentTemplate, updateTemplate: false };
       }
-
-    } else if (llmProvider === 'openai') {
+    } else {
       const openai = new OpenAI({
         apiKey: process.env.openai_api_key,
       });
@@ -110,25 +127,46 @@ export async function POST(req: NextRequest) {
         response_format: { type: "json_object" }
       });
 
-      const data = JSON.parse(completion.choices[0].message.content || '{}');
-      responseText = data.response;
-      suggestedTemplate = data.suggestedTemplate;
-      updateTemplate = data.updateTemplate;
+      return JSON.parse(completion.choices[0].message.content || '{}');
     }
+  })();
+
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("TIMEOUT")), llmConfig.timeout_secs * 1000);
+  });
+
+  try {
+    const data: any = await Promise.race([aiPromise, timeoutPromise]);
+
+    await sendTelemetryEvent('api_request_success', {
+      llm_provider: llmProvider,
+      llm_model: llmModel,
+      update_template: !!data.updateTemplate
+    });
 
     return NextResponse.json({
-      response: responseText,
-      suggestedTemplate: suggestedTemplate,
-      updateTemplate: updateTemplate,
+      response: data.response,
+      suggestedTemplate: data.suggestedTemplate,
+      updateTemplate: !!data.updateTemplate,
       llm: {
         provider: llmProvider,
         model: llmModel
-      } // For debugging/transparency
+      }
     });
   } catch (error: any) {
-    if (error.message === "CUSTOM_TIMEOUT_ERROR") {
+    if (error.message === "TIMEOUT") {
+      await sendTelemetryEvent('api_request_timeout', {
+        llm_provider: llmProvider,
+        llm_model: llmModel
+      });
       return NextResponse.json({ error: "The llm model took too long to respond. Please try again or try a different prompt." }, { status: 504 });
     }
+
+    await sendTelemetryEvent('api_request_error', {
+      llm_provider: llmProvider,
+      llm_model: llmModel,
+      error_message: error.message?.substring(0, 100)
+    });
 
     console.error('some error occurred while processing user prompt', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
