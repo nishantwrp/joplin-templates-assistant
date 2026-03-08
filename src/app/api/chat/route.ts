@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 export async function POST(req: NextRequest) {
   try {
     const { prompt, currentTemplate } = await req.json();
+
+    // Read documentation from templates-plugin/docs.md
+    const docsPath = path.join(process.cwd(), 'templates-plugin', 'docs.md');
+    let documentation = "";
+    try {
+      documentation = await fs.readFile(docsPath, 'utf8');
+    } catch (e) {
+      console.warn("Could not read documentation file:", e);
+    }
 
     const provider = process.env.AI_PROVIDER || 'gemini';
     let responseText = '';
@@ -30,23 +41,34 @@ export async function POST(req: NextRequest) {
       not supported in playground, please answer using the plugin documentation.
     
       The plugin internally uses Handlebars.js for templating. Please refer to the following
-      plugin documentation
+      plugin documentation.
 
-      Current Template:
-      \`\`\`markdown
-      ${currentTemplate}
-      \`\`\`
-      
-      Analyze the user prompt and provide:
-      1. A brief helpful response.
-      2. The updated full template body.
+      Instructions: Analyze the user prompt and provide:
+      1. A brief helpful response for the user.
+      2. Whether you have a template update suggestion, if yes, the updated 
+         full template body.
       
       Respond ONLY in JSON format:
       {
         "response": "your textual response here",
-        "updateTemplate": "a boolean representing whether or not the template content needs to be updated. can be false if user can be helped with just a text response.", 
-        "suggestedTemplate": "the full updated markdown template here"
-      }`;
+        "updateTemplate": "a boolean representing whether or not the template content needs to be updated to answer the users query.", 
+        "suggestedTemplate": "the full updated markdown template here, if updateTemplate is false, this can be anything"
+      }
+        
+      Plugin documentation:
+      \`\`\`markdown
+      ${documentation}
+      \`\`\`
+      `;
+
+    const userPrompt = `
+      User Prompt: ${prompt}
+
+      User Template: 
+      \`\`\`markdown
+      ${currentTemplate}
+      \`\`\`
+    `;
 
     if (provider === 'gemini') {
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -55,7 +77,6 @@ export async function POST(req: NextRequest) {
       const result = await model.generateContent([systemContext, prompt]);
       const text = result.response.text();
 
-      // Attempt to parse JSON from the response (in case the model adds markdown backticks)
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const data = JSON.parse(jsonMatch[0]);
@@ -70,19 +91,11 @@ export async function POST(req: NextRequest) {
         apiKey: process.env.OPENAI_API_KEY,
       });
 
-      const systemPrompt = `You are a Joplin Template Assistant. 
-      Analyze the user prompt and current template. 
-      Provide a helpful response and the updated full template body in JSON format:
-      {
-        "response": "text",
-        "suggestedTemplate": "markdown"
-      }`;
-
       const completion = await openai.chat.completions.create({
-        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+        model: process.env.OPENAI_MODEL || "gpt-4o",
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Current Template:\n${currentTemplate}\n\nUser Prompt: ${prompt}` }
+          { role: "system", content: systemContext },
+          { role: "user", content: `User Prompt: ${prompt}` }
         ],
         response_format: { type: "json_object" }
       });
