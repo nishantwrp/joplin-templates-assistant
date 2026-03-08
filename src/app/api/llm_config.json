@@ -1,0 +1,5 @@
+{
+  "geminiToOpenaiSplitRatio": 0.5,
+  "geminiModel": "gemini-3-flash",
+  "openaiModel": "gpt-4o-mini"
+}

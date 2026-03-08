@@ -1,27 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
-import { promises as fs } from 'fs';
+import { readFileSync } from 'fs';
 import path from 'path';
 
+const docsPath = path.join(process.cwd(), 'templates-plugin', 'docs.md');
+let documentation = readFileSync(docsPath, 'utf8');
+
+const configPath = path.join(process.cwd(), 'src', 'app', 'api', 'llm_config.json');
+let llmConfig = JSON.parse(readFileSync(configPath, 'utf8'));
+
 export async function POST(req: NextRequest) {
-  try {
-    const { prompt, currentTemplate } = await req.json();
+  const { prompt, currentTemplate } = await req.json();
 
-    // Read documentation from templates-plugin/docs.md
-    const docsPath = path.join(process.cwd(), 'templates-plugin', 'docs.md');
-    let documentation = "";
-    try {
-      documentation = await fs.readFile(docsPath, 'utf8');
-    } catch (e) {
-      console.warn("Could not read documentation file:", e);
-    }
+  // Randomly select provider based on split ratio
+  const llmProvider = Math.random() < llmConfig.geminiToOpenaiSplitRatio ? 'gemini' : 'openai';
+  const llmModel = llmProvider === 'gemini' ? llmConfig.geminiModel : llmConfig.openaiModel;
+  let responseText = '';
+  let suggestedTemplate = currentTemplate;
 
-    const provider = process.env.AI_PROVIDER || 'gemini';
-    let responseText = '';
-    let suggestedTemplate = currentTemplate;
-
-    const systemContext = `You are Albus. An assistant that will help users write joplin templates.
+  const systemContext = `You are Albus. An assistant that will help users write joplin templates.
 
       Joplin is an open-source markdown based note taking app. A joplin workspace is collection of notebook.
       A notebook is a collection of multiple notes. A note can have multiple tags. A note can either be a
@@ -61,7 +59,7 @@ export async function POST(req: NextRequest) {
       \`\`\`
       `;
 
-    const userPrompt = `
+  const userPrompt = `
       User Prompt: ${prompt}
 
       User Template: 
@@ -70,11 +68,12 @@ export async function POST(req: NextRequest) {
       \`\`\`
     `;
 
-    if (provider === 'gemini') {
+  try {
+    if (llmProvider === 'gemini') {
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: llmModel });
 
-      const result = await model.generateContent([systemContext, prompt]);
+      const result = await model.generateContent([systemContext, userPrompt]);
       const text = result.response.text();
 
       const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -86,16 +85,16 @@ export async function POST(req: NextRequest) {
         responseText = text;
       }
 
-    } else if (provider === 'openai') {
+    } else if (llmProvider === 'openai') {
       const openai = new OpenAI({
         apiKey: process.env.OPENAI_API_KEY,
       });
 
       const completion = await openai.chat.completions.create({
-        model: process.env.OPENAI_MODEL || "gpt-4o",
+        model: llmModel,
         messages: [
           { role: "system", content: systemContext },
-          { role: "user", content: `User Prompt: ${prompt}` }
+          { role: "user", content: userPrompt }
         ],
         response_format: { type: "json_object" }
       });
@@ -107,11 +106,14 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       response: responseText,
-      suggestedTemplate: suggestedTemplate
+      suggestedTemplate: suggestedTemplate,
+      llm: {
+        provider: llmProvider,
+        model: llmModel
+      } // For debugging/transparency
     });
-
   } catch (error: any) {
-    console.error('AI API Error:', error);
+    console.error('some error occurred while processing user prompt', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
