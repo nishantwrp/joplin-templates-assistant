@@ -44,6 +44,25 @@
   gap: 8px;
 }
 
+.headerAvatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.headerLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.headerLink:hover {
+  text-decoration: underline;
+}
+
 .headerActions {
   display: flex;
   align-items: center;
@@ -365,6 +384,41 @@
 .aiMessage {
   background-color: var(--button-secondary-hover);
   align-self: flex-start;
+  position: relative;
+}
+
+.aiMessageWithFeedback {
+  padding-bottom: 32px; /* Space for feedback buttons */
+}
+
+.feedbackButtons {
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.feedbackButton {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.feedbackButton:hover {
+  background-color: var(--button-secondary-border);
+  color: var(--text-primary);
+}
+
+.feedbackButtonActive {
+  color: var(--text-primary);
 }
 
 .userMessage {
