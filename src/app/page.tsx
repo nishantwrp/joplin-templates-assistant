@@ -4,16 +4,16 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { 
-  Send, 
-  FileEdit, 
-  MessageSquare, 
-  Play, 
-  Eye, 
-  Code, 
-  AlertCircle, 
-  ChevronDown, 
-  ChevronRight, 
+import {
+  Send,
+  FileEdit,
+  MessageSquare,
+  Play,
+  Eye,
+  Code,
+  AlertCircle,
+  ChevronDown,
+  ChevronRight,
   Info,
   Tag as TagIcon,
   Calendar,
@@ -52,7 +52,7 @@ export default function Home() {
   ]);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isChatLoading, setIsChatLoading] = useState(false);
-  
+
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogHtml, setDialogHtml] = useState("");
@@ -60,7 +60,7 @@ export default function Home() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const chatHistoryRef = useRef<HTMLDivElement>(null);
-  
+
   // Track latest editor content via ref to avoid stale closures in handleTryItOut
   const editor1ContentRef = useRef(editor1Content);
   useEffect(() => {
@@ -137,8 +137,8 @@ export default function Home() {
 
         setMessages((prev) => [
           ...prev,
-          { 
-            role: "ai", 
+          {
+            role: "ai",
             content: data.response,
             llm: data.llm
           },
@@ -266,8 +266,8 @@ export default function Home() {
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>Template Variables</div>
             <div className={styles.modalBody}>
-              <div 
-                dangerouslySetInnerHTML={{ __html: dialogHtml }} 
+              <div
+                dangerouslySetInnerHTML={{ __html: dialogHtml }}
                 ref={(el) => {
                   if (el) {
                     const form = el.querySelector('form');
@@ -357,8 +357,8 @@ export default function Home() {
               <>
                 {lastCreatedNote && (
                   <div className={styles.metadataSection}>
-                    <div 
-                      className={styles.metadataHeader} 
+                    <div
+                      className={styles.metadataHeader}
                       onClick={() => setIsMetadataExpanded(!isMetadataExpanded)}
                     >
                       {isMetadataExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -441,9 +441,9 @@ export default function Home() {
       <section className={styles.chatbotSection}>
         <div className={styles.editorHeader}>
           <div className={styles.headerTitle}>
-            <a 
-              href="https://github.com/albusbot" 
-              target="_blank" 
+            <a
+              href="https://github.com/albusbot"
+              target="_blank"
               rel="noopener noreferrer"
               className={styles.headerLink}
             >
@@ -460,21 +460,20 @@ export default function Home() {
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`${styles.chatMessage} ${
-                msg.role === "ai" ? styles.aiMessage : styles.userMessage
-              } ${msg.role === "ai" && idx !== 0 ? styles.aiMessageWithFeedback : ""}`}
+              className={`${styles.chatMessage} ${msg.role === "ai" ? styles.aiMessage : styles.userMessage
+                } ${msg.role === "ai" && idx !== 0 ? styles.aiMessageWithFeedback : ""}`}
             >
               {msg.content}
               {msg.role === "ai" && idx !== 0 && (
                 <div className={styles.feedbackButtons}>
-                  <button 
+                  <button
                     className={`${styles.feedbackButton} ${msg.feedback === "up" ? styles.feedbackButtonActive : ""}`}
                     onClick={() => handleFeedback(idx, "up")}
                     title="Helpful"
                   >
                     <ThumbsUp size={12} fill={msg.feedback === "up" ? "currentColor" : "none"} />
                   </button>
-                  <button 
+                  <button
                     className={`${styles.feedbackButton} ${msg.feedback === "down" ? styles.feedbackButtonActive : ""}`}
                     onClick={() => handleFeedback(idx, "down")}
                     title="Not helpful"
@@ -496,7 +495,7 @@ export default function Home() {
         <div className={styles.inputArea}>
           <textarea
             className={styles.chatInput}
-            placeholder={isChatLoading ? "Thinking..." : "Ask AI for help with templates..."}
+            placeholder={isChatLoading ? "Thinking..." : "Ask Albus for help with templates..."}
             rows={1}
             value={chatInput}
             disabled={isChatLoading}
@@ -508,8 +507,8 @@ export default function Home() {
               }
             }}
           />
-          <button 
-            className={styles.sendButton} 
+          <button
+            className={styles.sendButton}
             onClick={handleSendMessage}
             disabled={isChatLoading || !chatInput.trim()}
           >
