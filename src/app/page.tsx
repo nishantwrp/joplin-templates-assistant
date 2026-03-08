@@ -21,7 +21,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   Heart,
-  ExternalLink
+  ExternalLink,
+  Github
 } from "lucide-react";
 import { sendGAEvent } from '@next/third-parties/google';
 import { joplin, createNoteWithTemplate } from "../../fake-joplin";
@@ -327,10 +328,21 @@ export default function Home() {
               <FileEdit size={16} />
               <span>Template Editor</span>
             </div>
-            <button className={styles.tryButton} onClick={handleTryItOut}>
-              <Play size={12} fill="currentColor" />
-              Try it out
-            </button>
+            <div className={styles.headerActions}>
+              <a 
+                href="https://github.com/nishantwrp/joplin-templates-assistant" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className={styles.githubLink}
+              >
+                <Github size={14} />
+                GitHub
+              </a>
+              <button className={styles.tryButton} onClick={handleTryItOut}>
+                <Play size={12} fill="currentColor" />
+                Try it out
+              </button>
+            </div>
           </div>
           <div className={styles.editor}>
             <Editor
