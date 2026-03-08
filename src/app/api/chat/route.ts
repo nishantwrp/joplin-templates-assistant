@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       {
         "response": "your textual response here",
         "updateTemplate": "a boolean representing whether or not the template content needs to be updated to answer the users query.", 
-        "suggestedTemplate": "the full updated markdown template here, if updateTemplate is false, this can be anything"
+        "suggestedTemplate": "the full updated markdown template here. DON'T include \`\`\`markdown\`\`\` wrapper in the response."
       }
         
       Plugin documentation:

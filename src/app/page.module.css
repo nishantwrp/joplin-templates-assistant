@@ -416,6 +416,42 @@
   opacity: 0.9;
 }
 
+.sendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chatInput:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.loadingDots {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  background-color: var(--button-secondary-hover);
+  border-radius: 8px;
+  align-self: flex-start;
+  width: fit-content;
+}
+
+.loadingDots span {
+  width: 6px;
+  height: 6px;
+  background-color: var(--text-secondary);
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.loadingDots span:nth-child(1) { animation-delay: -0.32s; }
+.loadingDots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1.0); }
+}
+
 @media (prefers-color-scheme: dark) {
   .container {
     --background: #0a0a0a;

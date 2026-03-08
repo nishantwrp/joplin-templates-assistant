@@ -4,16 +4,16 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import {
-  Send,
-  FileEdit,
-  MessageSquare,
-  Play,
-  Eye,
-  Code,
-  AlertCircle,
-  ChevronDown,
-  ChevronRight,
+import { 
+  Send, 
+  FileEdit, 
+  MessageSquare, 
+  Play, 
+  Eye, 
+  Code, 
+  AlertCircle, 
+  ChevronDown, 
+  ChevronRight, 
   Info,
   Tag as TagIcon,
   Calendar,
@@ -38,7 +38,8 @@ export default function Home() {
     { role: "ai", content: "Hello! How can I help you with your templates today?" },
   ]);
   const [isDarkMode, setIsDarkMode] = useState(false);
-
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogHtml, setDialogHtml] = useState("");
@@ -46,7 +47,7 @@ export default function Home() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const chatHistoryRef = useRef<HTMLDivElement>(null);
-
+  
   // Track latest editor content via ref to avoid stale closures in handleTryItOut
   const editor1ContentRef = useRef(editor1Content);
   useEffect(() => {
@@ -81,14 +82,15 @@ export default function Home() {
     if (chatHistoryRef.current) {
       chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isChatLoading]);
 
   const handleSendMessage = async () => {
-    if (!chatInput.trim()) return;
+    if (!chatInput.trim() || isChatLoading) return;
 
     const userPrompt = chatInput;
     setMessages((prev) => [...prev, { role: "user", content: userPrompt }]);
     setChatInput("");
+    setIsChatLoading(true);
 
     try {
       const response = await fetch("/api/chat", {
@@ -96,7 +98,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: userPrompt,
-          currentTemplate: editor1Content
+          currentTemplate: editor1ContentRef.current
         }),
       });
 
@@ -121,6 +123,8 @@ export default function Home() {
         ...prev,
         { role: "ai", content: "Failed to connect to AI assistant." },
       ]);
+    } finally {
+      setIsChatLoading(false);
     }
   };
 
@@ -166,8 +170,6 @@ export default function Home() {
       if (note) {
         setLastCreatedNote(note);
         setEditor2Content(note.body);
-        // Uncomment to auto-expand metadata on note creation
-        // setIsMetadataExpanded(true);
       }
     } catch (err: any) {
       setError(err.message || "An unknown error occurred during template parsing.");
@@ -189,8 +191,8 @@ export default function Home() {
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>Template Variables</div>
             <div className={styles.modalBody}>
-              <div
-                dangerouslySetInnerHTML={{ __html: dialogHtml }}
+              <div 
+                dangerouslySetInnerHTML={{ __html: dialogHtml }} 
                 ref={(el) => {
                   if (el) {
                     const form = el.querySelector('form');
@@ -280,8 +282,8 @@ export default function Home() {
               <>
                 {lastCreatedNote && (
                   <div className={styles.metadataSection}>
-                    <div
-                      className={styles.metadataHeader}
+                    <div 
+                      className={styles.metadataHeader} 
                       onClick={() => setIsMetadataExpanded(!isMetadataExpanded)}
                     >
                       {isMetadataExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -377,13 +379,21 @@ export default function Home() {
               {msg.content}
             </div>
           ))}
+          {isChatLoading && (
+            <div className={styles.loadingDots}>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          )}
         </div>
         <div className={styles.inputArea}>
           <textarea
             className={styles.chatInput}
-            placeholder="Ask AI for help with templates..."
+            placeholder={isChatLoading ? "Thinking..." : "Ask AI for help with templates..."}
             rows={1}
             value={chatInput}
+            disabled={isChatLoading}
             onChange={(e) => setChatInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -392,7 +402,11 @@ export default function Home() {
               }
             }}
           />
-          <button className={styles.sendButton} onClick={handleSendMessage}>
+          <button 
+            className={styles.sendButton} 
+            onClick={handleSendMessage}
+            disabled={isChatLoading || !chatInput.trim()}
+          >
             <Send size={18} />
           </button>
         </div>
