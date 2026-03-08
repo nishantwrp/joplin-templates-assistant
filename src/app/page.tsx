@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { sendGAEvent } from '@next/third-parties/google';
 import { joplin, createNoteWithTemplate } from "../../fake-joplin";
+import manifest from "../../templates-plugin/manifest.json";
 import styles from "./page.module.css";
 
 interface Message {
@@ -40,7 +41,7 @@ interface Message {
 
 export default function Home() {
   const [editor1Content, setEditor1Content] = useState<string | undefined>(
-    "<!-- \n  Templates Plugin: v3.0.0\n  Documentation: https://github.com/joplin/plugin-templates\n-->\n\n# Template Editor\n\nStart typing your Joplin template here..."
+    `<!-- \n  Templates Plugin: v${manifest.version}\n  Documentation: https://github.com/joplin/plugin-templates\n-->\n\n# Template Editor\n\nStart typing your Joplin template here...`
   );
   const [editor2Content, setEditor2Content] = useState<string | undefined>(
     "# Preview\n\nClick 'Try it out' to see the result here."
