@@ -19,6 +19,7 @@ import {
   Calendar,
   Folder
 } from "lucide-react";
+import { sendGAEvent } from '@next/third-parties/google';
 import { joplin, createNoteWithTemplate } from "../../fake-joplin";
 import styles from "./page.module.css";
 
@@ -129,6 +130,10 @@ export default function Home() {
   };
 
   const variableInputsCallback = useCallback((html: string) => {
+    sendGAEvent('event', 'variables_dialog_shown', {
+      event_category: 'engagement',
+      event_label: 'Variable Input'
+    });
     setDialogHtml(html);
     setIsDialogOpen(true);
     return new Promise<any>((resolve) => {
@@ -164,6 +169,11 @@ export default function Home() {
 
   const handleTryItOut = async () => {
     setError(null);
+    sendGAEvent('event', 'try_it_out_click', {
+      event_category: 'engagement',
+      event_label: 'Template Execution'
+    });
+
     try {
       const currentContent = editor1ContentRef.current ?? "";
       const note = await createNoteWithTemplate(currentContent, variableInputsCallback);
@@ -172,7 +182,12 @@ export default function Home() {
         setEditor2Content(note.body);
       }
     } catch (err: any) {
-      setError(err.message || "An unknown error occurred during template parsing.");
+      const errorMessage = err.message || "An unknown error occurred during template parsing.";
+      setError(errorMessage);
+      sendGAEvent('event', 'template_error', {
+        event_category: 'error',
+        event_label: errorMessage.substring(0, 100)
+      });
     }
   };
 
