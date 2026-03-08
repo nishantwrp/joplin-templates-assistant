@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
 
   try {
     if (llmProvider === 'gemini') {
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+      const genAI = new GoogleGenerativeAI(process.env.gemini_api_key || '');
       const model = genAI.getGenerativeModel({ model: llmModel });
 
       const result = await model.generateContent([systemContext, userPrompt]);
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
 
     } else if (llmProvider === 'openai') {
       const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
+        apiKey: process.env.openai_api_key,
       });
 
       const completion = await openai.chat.completions.create({
