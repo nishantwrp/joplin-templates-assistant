@@ -19,6 +19,8 @@ export async function POST(req: NextRequest) {
   // Randomly select provider based on split ratio
   const llmProvider = Math.random() < llmConfig.geminiToOpenaiSplitRatio ? 'gemini' : 'openai';
   const llmModel = llmProvider === 'gemini' ? llmConfig.geminiModel : llmConfig.openaiModel;
+  console.info("routing request to llm provider ", llmProvider, " with model ", llmModel);
+
   let responseText = '';
   let updateTemplate = false;
   let suggestedTemplate = currentTemplate;
