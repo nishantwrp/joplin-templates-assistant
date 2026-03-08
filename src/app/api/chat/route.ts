@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
   const llmProvider = Math.random() < llmConfig.geminiToOpenaiSplitRatio ? 'gemini' : 'openai';
   const llmModel = llmProvider === 'gemini' ? llmConfig.geminiModel : llmConfig.openaiModel;
   let responseText = '';
+  let updateTemplate = false;
   let suggestedTemplate = currentTemplate;
 
   const systemContext = `You are Albus. An assistant that will help users write joplin templates.
@@ -81,6 +82,7 @@ export async function POST(req: NextRequest) {
         const data = JSON.parse(jsonMatch[0]);
         responseText = data.response;
         suggestedTemplate = data.suggestedTemplate;
+        updateTemplate = data.updateTemplate;
       } else {
         responseText = text;
       }
@@ -102,11 +104,13 @@ export async function POST(req: NextRequest) {
       const data = JSON.parse(completion.choices[0].message.content || '{}');
       responseText = data.response;
       suggestedTemplate = data.suggestedTemplate;
+      updateTemplate = data.updateTemplate;
     }
 
     return NextResponse.json({
       response: responseText,
       suggestedTemplate: suggestedTemplate,
+      updateTemplate: updateTemplate,
       llm: {
         provider: llmProvider,
         model: llmModel
