@@ -5,7 +5,7 @@ This app also has a playground editor to make edits to generated templates and t
 This app uses the real [template-plugin](https://github.com/joplin/plugin-templates) to run your templates. The plugin interacts with a [fake joplin environment](./fake-joplin/) that runs inside the app itself.
 
 > [!NOTE]
-> The fake joplin environment is not a generic replica of the actual joplin app. It's built very specific to how templates-plugin interacts with joplin plugin API.
+> The fake joplin environment is not a generic replica of the actual joplin app. It's built very specific to how templates-plugin interacts with the Joplin Plugin API.
 
 ## Why?
 `v3.0.0` release of joplin templates plugin introduces support for very powerful features like conditions, loops, math helpers, datetime modifiers, etc.
@@ -15,6 +15,7 @@ However it may be a little time & mental bandwidth consuming to learn & use thes
 With the advent of LLMs, this app aims to make it easier for the end-users to create & use dynamic joplin templates. 
 
 ## Architecture
+![Architecture](./docs/architecture.png)
 
 ## Telemetery
 
@@ -30,9 +31,9 @@ This app uses [Google Analytics](https://analytics.google.com/) to collect some 
 ## Issues
 Please feel free to open a GitHub issue in this repository to file any bugs / feature requests for this app.
 
-But, please use the [templates-plugin issue tracker](https://github.com/joplin/plugin-templates) for any bugs / feature requests related to the plugin.
+But please use the [templates-plugin issue tracker](https://github.com/joplin/plugin-templates) for any bugs / feature requests related to the plugin.
 
-## Support / Sponsoring
+## Sponsor
 This assistant and the templates-plugin are built by [Nishant Mittal](https://nishantwrp.com). Your support helps cover LLM costs and future development!
 
 You can sponsor via [GitHub Sponsors](https://github.com/sponsors/nishantwrp), [PayPal](https://www.paypal.com/paypalme/nishantwrp) or [BuyMeACoffee](https://buymeacoffee.com/nishantwrp).
