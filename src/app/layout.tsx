@@ -14,9 +14,27 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const title = "Joplin Templates Assistant"
+const description = "AI-powered assistant to create & a playground to test your joplin templates"
+
 export const metadata: Metadata = {
-  title: "Joplin Templates Assistant",
-  description: "Create and test Joplin templates with AI assistance",
+  title: title,
+  description: description,
+  keywords: ["joplin", "templates", "plugin", "ai", "assistant", "playground"],
+  openGraph: {
+    type: "website",
+    url: "https://joplin-templates-assistant.nishantwrp.com",
+    title: title,
+    description: description,
+    siteName: title,
+    images: [{ url: "https://joplin-templates-assistant.nishantwrp.com/screenshot.png" }]
+  },
+  twitter: {
+    card: "summary_large_image",
+    description: description,
+    title: title,
+    images: "https://joplin-templates-assistant.nishantwrp.com/screenshot.png"
+  }
 };
 
 export default function RootLayout({
