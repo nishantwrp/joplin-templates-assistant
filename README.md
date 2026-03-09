@@ -40,3 +40,5 @@ You can sponsor via [GitHub Sponsors](https://github.com/sponsors/nishantwrp), [
 
 ## Credits
 This app was mostly vibe-coded via [Gemini CLI](https://geminicli.com) in a weekend. Thanks Google for the generous free tier.
+
+Also, thanks [eraser.io](https://eraser.io) for the architecture diagram.
