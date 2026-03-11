@@ -86,6 +86,10 @@ export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isChatLoading, setIsChatLoading] = useState(false);
   
+  // Demo Modal State
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [dontShowDemoAgain, setDontShowDemoAgain] = useState(false);
+
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogHtml, setDialogHtml] = useState("");
@@ -100,7 +104,7 @@ export default function Home() {
     editor1ContentRef.current = editor1Content;
   }, [editor1Content]);
 
-  // Initialize plugin and detect system theme
+  // Initialize plugin, detect system theme and check for demo modal
   useEffect(() => {
     const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     setIsDarkMode(darkModeMediaQuery.matches);
@@ -120,6 +124,13 @@ export default function Home() {
     };
 
     initPlugin();
+
+    // Check if user has opted out of demo video
+    const hideDemo = localStorage.getItem("hide-demo-video");
+    if (!hideDemo) {
+      setIsDemoModalOpen(true);
+    }
+
     return () => darkModeMediaQuery.removeEventListener('change', themeListener);
   }, []);
 
@@ -129,6 +140,13 @@ export default function Home() {
       chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
     }
   }, [messages, isChatLoading]);
+
+  const handleCloseDemoModal = () => {
+    if (dontShowDemoAgain) {
+      localStorage.setItem("hide-demo-video", "true");
+    }
+    setIsDemoModalOpen(false);
+  };
 
   const handleSendMessage = async () => {
     if (!chatInput.trim() || isChatLoading) return;
@@ -293,6 +311,39 @@ export default function Home() {
 
   return (
     <div className={styles.container}>
+      {/* Demo Video Modal */}
+      {isDemoModalOpen && (
+        <div className={styles.modalOverlay} onClick={handleCloseDemoModal}>
+          <div className={`${styles.modalContent} ${styles.videoModalContent}`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>Albus Demo Video</div>
+            <div className={styles.modalBody}>
+              <div className={styles.videoContainer}>
+                <iframe 
+                  src="https://www.youtube.com/embed/OcedFXhu_UQ?autoplay=1" 
+                  title="Albus Demo Video"
+                  frameBorder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  allowFullScreen
+                ></iframe>
+              </div>
+            </div>
+            <div className={styles.modalFooter} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className={styles.dontShowAgain}>
+                <input 
+                  type="checkbox" 
+                  checked={dontShowDemoAgain} 
+                  onChange={(e) => setDontShowDemoAgain(e.target.checked)}
+                />
+                Don&apos;t show again
+              </label>
+              <button className={styles.tryButton} onClick={handleCloseDemoModal}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Dialog */}
       {isDialogOpen && (
         <div className={styles.modalOverlay} onClick={() => handleDialogClose('cancel')}>
@@ -330,6 +381,14 @@ export default function Home() {
               <span>Template Editor</span>
             </div>
             <div className={styles.headerActions}>
+              <button 
+                className={styles.githubLink}
+                onClick={() => setIsDemoModalOpen(true)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                <Play size={12} fill="currentColor" />
+                Watch Demo
+              </button>
               <a 
                 href="https://github.com/nishantwrp/joplin-templates-assistant" 
                 target="_blank" 
