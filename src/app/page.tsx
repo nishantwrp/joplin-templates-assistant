@@ -4,16 +4,16 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { 
-  Send, 
-  FileEdit, 
-  MessageSquare, 
-  Play, 
-  Eye, 
-  Code, 
-  AlertCircle, 
-  ChevronDown, 
-  ChevronRight, 
+import {
+  Send,
+  FileEdit,
+  MessageSquare,
+  Play,
+  Eye,
+  Code,
+  AlertCircle,
+  ChevronDown,
+  ChevronRight,
   Info,
   Tag as TagIcon,
   Calendar,
@@ -44,21 +44,21 @@ export default function Home() {
     `<!-- \n  Templates Plugin: v${manifest.version}\n  Documentation: https://github.com/joplin/plugin-templates\n-->\n\n# Template Editor\n\nStart typing your Joplin template here...`
   );
   const [editor2Content, setEditor2Content] = useState<string | undefined>(
-    "# Preview\n\nClick 'Try it out' to see the result here."
+    "# Preview\n\nClick 'Try it out' to see a new note created from your template."
   );
   const [lastCreatedNote, setLastCreatedNote] = useState<any>(null);
   const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
   const [previewMode, setPreviewMode] = useState<"source" | "rendered">("source");
   const [chatInput, setChatInput] = useState("");
   const [error, setError] = useState<string | null>(null);
-  
+
   const initialMessages: Message[] = [
-    { 
-      role: "ai", 
-      content: "Hello! I'm Albus. How can I help you with your Joplin templates today?" 
+    {
+      role: "ai",
+      content: "Hello! I'm Albus. How can I help you with your Joplin templates today?"
     },
-    { 
-      role: "system", 
+    {
+      role: "system",
       content: (
         <div className={styles.sponsorshipMessage}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -66,7 +66,7 @@ export default function Home() {
             <strong>Support Albus & Templates Plugin</strong>
           </div>
           <p style={{ fontSize: '13px', lineHeight: '1.5', marginBottom: '12px' }}>
-            This assistant and the templates-plugin are built by <a href="https://nishantwrp.com" target="_blank" rel="noopener">Nishant Mittal</a>. 
+            This assistant and the templates-plugin are built by <a href="https://nishantwrp.com" target="_blank" rel="noopener">Nishant Mittal</a>.
             Your support helps cover LLM costs and future development!
           </p>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -85,7 +85,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isChatLoading, setIsChatLoading] = useState(false);
-  
+
   // Demo Modal State
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [dontShowDemoAgain, setDontShowDemoAgain] = useState(false);
@@ -97,7 +97,7 @@ export default function Home() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const chatHistoryRef = useRef<HTMLDivElement>(null);
-  
+
   // Track latest editor content via ref to avoid stale closures in handleTryItOut
   const editor1ContentRef = useRef(editor1Content);
   useEffect(() => {
@@ -188,8 +188,8 @@ export default function Home() {
 
         setMessages((prev) => [
           ...prev,
-          { 
-            role: "ai", 
+          {
+            role: "ai",
             content: data.response,
             llm: data.llm
           },
@@ -318,20 +318,20 @@ export default function Home() {
             <div className={styles.modalHeader}>Albus Demo Video</div>
             <div className={styles.modalBody}>
               <div className={styles.videoContainer}>
-                <iframe 
-                  src="https://www.youtube.com/embed/OcedFXhu_UQ?autoplay=1" 
+                <iframe
+                  src="https://www.youtube.com/embed/OcedFXhu_UQ?autoplay=1"
                   title="Albus Demo Video"
-                  frameBorder="0" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 ></iframe>
               </div>
             </div>
             <div className={styles.modalFooter} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
               <label className={styles.dontShowAgain}>
-                <input 
-                  type="checkbox" 
-                  checked={dontShowDemoAgain} 
+                <input
+                  type="checkbox"
+                  checked={dontShowDemoAgain}
                   onChange={(e) => setDontShowDemoAgain(e.target.checked)}
                 />
                 Don&apos;t show again
@@ -350,8 +350,8 @@ export default function Home() {
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>Template Variables</div>
             <div className={styles.modalBody}>
-              <div 
-                dangerouslySetInnerHTML={{ __html: dialogHtml }} 
+              <div
+                dangerouslySetInnerHTML={{ __html: dialogHtml }}
                 ref={(el) => {
                   if (el) {
                     const form = el.querySelector('form');
@@ -381,7 +381,7 @@ export default function Home() {
               <span>Template Editor</span>
             </div>
             <div className={styles.headerActions}>
-              <button 
+              <button
                 className={styles.githubLink}
                 onClick={() => setIsDemoModalOpen(true)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
@@ -389,9 +389,9 @@ export default function Home() {
                 <Play size={12} fill="currentColor" />
                 Watch Demo
               </button>
-              <a 
-                href="https://github.com/nishantwrp/joplin-templates-assistant" 
-                target="_blank" 
+              <a
+                href="https://github.com/nishantwrp/joplin-templates-assistant"
+                target="_blank"
                 rel="noopener noreferrer"
                 className={styles.githubLink}
               >
@@ -460,8 +460,8 @@ export default function Home() {
               <>
                 {lastCreatedNote && (
                   <div className={styles.metadataSection}>
-                    <div 
-                      className={styles.metadataHeader} 
+                    <div
+                      className={styles.metadataHeader}
                       onClick={() => setIsMetadataExpanded(!isMetadataExpanded)}
                     >
                       {isMetadataExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -544,9 +544,9 @@ export default function Home() {
       <section className={styles.chatbotSection}>
         <div className={styles.editorHeader}>
           <div className={styles.headerTitle}>
-            <a 
-              href="https://github.com/albusbot" 
-              target="_blank" 
+            <a
+              href="https://github.com/albusbot"
+              target="_blank"
               rel="noopener noreferrer"
               className={styles.headerLink}
             >
@@ -563,23 +563,22 @@ export default function Home() {
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`${styles.chatMessage} ${
-                msg.role === "ai" ? styles.aiMessage : 
+              className={`${styles.chatMessage} ${msg.role === "ai" ? styles.aiMessage :
                 msg.role === "user" ? styles.userMessage :
-                styles.aiMessage // System messages also look like AI but with unique styles
-              } ${msg.role === "ai" && idx > 1 ? styles.aiMessageWithFeedback : ""}`}
+                  styles.aiMessage // System messages also look like AI but with unique styles
+                } ${msg.role === "ai" && idx > 1 ? styles.aiMessageWithFeedback : ""}`}
             >
               {msg.content}
               {msg.role === "ai" && idx > 1 && (
                 <div className={styles.feedbackButtons}>
-                  <button 
+                  <button
                     className={`${styles.feedbackButton} ${msg.feedback === "up" ? styles.feedbackButtonActive : ""}`}
                     onClick={() => handleFeedback(idx, "up")}
                     title="Helpful"
                   >
                     <ThumbsUp size={12} fill={msg.feedback === "up" ? "currentColor" : "none"} />
                   </button>
-                  <button 
+                  <button
                     className={`${styles.feedbackButton} ${msg.feedback === "down" ? styles.feedbackButtonActive : ""}`}
                     onClick={() => handleFeedback(idx, "down")}
                     title="Not helpful"
@@ -613,8 +612,8 @@ export default function Home() {
               }
             }}
           />
-          <button 
-            className={styles.sendButton} 
+          <button
+            className={styles.sendButton}
             onClick={handleSendMessage}
             disabled={isChatLoading || !chatInput.trim()}
           >
