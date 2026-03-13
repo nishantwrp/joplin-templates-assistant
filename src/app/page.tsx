@@ -318,10 +318,9 @@ export default function Home() {
             <div className={styles.modalHeader}>Albus Demo Video</div>
             <div className={styles.modalBody}>
               <div className={styles.videoContainer}>
-                <iframe
-                  src="https://www.youtube.com/embed/OcedFXhu_UQ?autoplay=1"
-                  title="Albus Demo Video"
-                  frameBorder="0"
+                <iframe 
+                  src="https://www.youtube.com/embed/VPaXE7Jv6xg?autoplay=1" 
+                  title="Albus Demo Video"                  frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 ></iframe>
