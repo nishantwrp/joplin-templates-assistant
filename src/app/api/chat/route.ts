@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { trace } from '@opentelemetry/api';
 import OpenAI from 'openai';
 import { readFileSync } from 'fs';
 import path from 'path';
@@ -37,20 +38,27 @@ async function sendTelemetryEvent(eventName: string, params: Record<string, any>
 }
 
 export async function POST(req: NextRequest) {
-  const { prompt, currentTemplate } = await req.json();
+  return trace.getTracer('joplin-templates-assistant').startActiveSpan('process_chat_request', async (span) => {
+      const { prompt, currentTemplate } = await req.json();
 
-  // Randomly select provider based on split ratio
-  const llmProvider = Math.random() < llmConfig.geminiToOpenaiSplitRatio ? 'gemini' : 'openai';
-  const llmModel = llmProvider === 'gemini' ? llmConfig.geminiModel : llmConfig.openaiModel;
+      span.setAttribute('request.prompt', prompt);
+      span.setAttribute('request.template', currentTemplate);
 
-  console.info("routing request to llm provider ", llmProvider, " with model ", llmModel);
+      // Randomly select provider based on split ratio
+      const llmProvider = Math.random() < llmConfig.geminiToOpenaiSplitRatio ? 'gemini' : 'openai';
+      const llmModel = llmProvider === 'gemini' ? llmConfig.geminiModel : llmConfig.openaiModel;
 
-  await sendTelemetryEvent('api_request_start', {
-    llm_provider: llmProvider,
-    llm_model: llmModel
-  });
+      span.setAttribute('llm.provider', llmProvider);
+      span.setAttribute('llm.model', llmModel);
 
-  const systemContext = `You are Albus. An assistant that will help users write joplin templates.
+      console.info("routing request to llm provider ", llmProvider, " with model ", llmModel);
+
+      await sendTelemetryEvent('api_request_start', {
+        llm_provider: llmProvider,
+        llm_model: llmModel
+      });
+
+      const systemContext = `You are Albus. An assistant that will help users write joplin templates.
 
       Joplin is an open-source markdown based note taking app. A joplin workspace is collection of notebook.
       A notebook is a collection of multiple notes. A note can have multiple tags. A note can either be a
@@ -138,12 +146,15 @@ export async function POST(req: NextRequest) {
   try {
     const data: any = await Promise.race([aiPromise, timeoutPromise]);
 
+    span.setAttribute('response.completion', typeof data.response === 'string' ? data.response : JSON.stringify(data.response));
+
     await sendTelemetryEvent('api_request_success', {
       llm_provider: llmProvider,
       llm_model: llmModel,
       update_template: !!data.updateTemplate
     });
 
+    span.end();
     return NextResponse.json({
       response: data.response,
       suggestedTemplate: data.suggestedTemplate,
@@ -154,11 +165,15 @@ export async function POST(req: NextRequest) {
       }
     });
   } catch (error: any) {
+    span.recordException(error);
+    span.setStatus({ code: 2, message: error.message }); // 2 is Error in OpenTelemetry
+    
     if (error.message === "TIMEOUT") {
       await sendTelemetryEvent('api_request_timeout', {
         llm_provider: llmProvider,
         llm_model: llmModel
       });
+      span.end();
       return NextResponse.json({ error: "The llm model took too long to respond. Please try again or try a different prompt." }, { status: 504 });
     }
 
@@ -169,6 +184,8 @@ export async function POST(req: NextRequest) {
     });
 
     console.error('some error occurred while processing user prompt', error);
+    span.end();
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+});
 }
