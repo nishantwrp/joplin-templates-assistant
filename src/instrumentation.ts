@@ -12,7 +12,7 @@ export function register() {
     ? new OTLPTraceExporter({
       url: `https://otlp-http-intake.${datadogSite}/v1/traces`,
       headers: {
-        'DD-API-KEY': process.env.DD_API_KEY as string,
+        'DD-API-KEY': process.env.datadog_api_key as string,
       },
     })
     : undefined;
