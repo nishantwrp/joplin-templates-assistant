@@ -22,14 +22,14 @@ This app uses the real [template-plugin](https://github.com/joplin/plugin-templa
 
 ## Telemetry and Privacy
 
-Template content is processed locally in the browser and is not stored on any server.
+> [!NOTE]
+> If you are simply using the "Try it out" feature in the playground, your template content is processed solely in your local browser and is not saved or transmitted to any server.
 
-To improve AI response quality, Google Analytics is used to collect anonymous metrics, including:
--   Execution success and failure rates.
--   User feedback on specific LLM model responses.
--   Model performance data such as timeouts and errors.
+When you interact with the AI assistant (Albus), your chat queries are sent to our backend and subsequently to the configured LLM provider (Gemini or OpenAI) to generate responses. 
 
-Note: Chat queries are sent to the configured LLM provider (Gemini or OpenAI) to generate responses.
+To improve response quality and actively monitor and prevent abuse, the backend API utilizes OpenTelemetry to collect detailed diagnostic data. This telemetry includes request context, client identifiers & performance diagnostics (e.g. Selected LLM provider, execution success/failure rates, and model performance data).
+
+Additionally, anonymous frontend metrics are collected via Google Analytics, such as user feedback on specific LLM responses.
 
 ## Sponsor
 This assistant and the templates-plugin are built by [Nishant Mittal](https://nishantwrp.com). Your support helps cover LLM costs and future development!
