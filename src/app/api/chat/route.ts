@@ -41,13 +41,6 @@ export async function POST(req: NextRequest) {
   return trace.getTracer('joplin-templates-assistant').startActiveSpan('process_chat_request', async (span) => {
     const { prompt, currentTemplate } = await req.json();
 
-    // Add sender identifying information
-    const userAgent = req.headers.get('user-agent') || '';
-    const referer = req.headers.get('referer') || '';
-
-    if (userAgent) span.setAttribute('request.user_agent', userAgent);
-    if (referer) span.setAttribute('request.referer', referer);
-
     span.setAttribute('request.prompt', prompt);
     span.setAttribute('request.template', currentTemplate);
 
