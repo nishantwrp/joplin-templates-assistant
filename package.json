@@ -26,6 +26,7 @@
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "openai": "^6.27.0",
+    "opentelemetry-exporter-datadog": "^0.2.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",

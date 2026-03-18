@@ -10,7 +10,7 @@ export function register() {
 
   const traceExporter = isDatadogEnabled
     ? new OTLPTraceExporter({
-      url: `https://otlp-http-intake.${datadogSite}/v1/traces`,
+      url: `https://otlp.${datadogSite}/v1/traces`,
       headers: {
         'DD-API-KEY': process.env.datadog_api_key as string,
       },
