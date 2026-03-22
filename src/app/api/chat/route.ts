@@ -147,6 +147,8 @@ export async function POST(req: NextRequest) {
       const data: any = await Promise.race([aiPromise, timeoutPromise]);
 
       span.setAttribute('response.completion', typeof data.response === 'string' ? data.response : JSON.stringify(data.response));
+      span.setAttribute('response.suggested_template', data.suggestedTemplate);
+      span.setAttribute('response.update_template', data.updateTemplate);
 
       await sendTelemetryEvent('api_request_success', {
         llm_provider: llmProvider,
