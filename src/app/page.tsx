@@ -66,14 +66,31 @@ export default function Home() {
             <strong>Support Albus & Templates Plugin</strong>
           </div>
           <p style={{ fontSize: '13px', lineHeight: '1.5', marginBottom: '12px' }}>
-            This assistant and the templates-plugin are built by <a href="https://nishantwrp.com" target="_blank" rel="noopener">Nishant Mittal</a>.
+            This assistant and the templates-plugin are built by <a 
+              href="https://x.com/nishantwrp" 
+              target="_blank" 
+              rel="noopener"
+              onClick={() => sendGAEvent('event', 'author_link_clicked', { platform: 'x' })}
+            >Nishant Mittal</a>.
             Your support helps cover LLM costs and future development!
           </p>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <a href="https://github.com/sponsors/nishantwrp" target="_blank" rel="noopener" className={styles.supportLink}>
+            <a 
+              href="https://github.com/sponsors/nishantwrp" 
+              target="_blank" 
+              rel="noopener" 
+              className={styles.supportLink}
+              onClick={() => sendGAEvent('event', 'sponsorship_link_clicked', { platform: 'github_sponsors' })}
+            >
               GitHub Sponsors <ExternalLink size={12} />
             </a>
-            <a href="https://buymeacoffee.com/nishantwrp" target="_blank" rel="noopener" className={styles.supportLink}>
+            <a 
+              href="https://buymeacoffee.com/nishantwrp" 
+              target="_blank" 
+              rel="noopener" 
+              className={styles.supportLink}
+              onClick={() => sendGAEvent('event', 'sponsorship_link_clicked', { platform: 'buy_me_a_coffee' })}
+            >
               Buy Me a Coffee <ExternalLink size={12} />
             </a>
           </div>
@@ -110,6 +127,9 @@ export default function Home() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const chatHistoryRef = useRef<HTMLDivElement>(null);
+  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const videoPlayedRef = useRef(false);
+  const videoRef = useRef<HTMLIFrameElement>(null);
 
   // Track latest editor content via ref to avoid stale closures in handleTryItOut
   const editor1ContentRef = useRef(editor1Content);
@@ -159,6 +179,99 @@ export default function Home() {
       localStorage.setItem("hide-demo-video", "true");
     }
     setIsDemoModalOpen(false);
+    videoPlayedRef.current = false;
+  };
+
+  // Track demo modal display
+  useEffect(() => {
+    if (isDemoModalOpen) {
+      sendGAEvent('event', 'watch_demo_shown', {
+        event_category: 'engagement',
+        event_label: 'Demo Modal'
+      });
+    }
+  }, [isDemoModalOpen]);
+
+  // Track YouTube video playback (requires enablejsapi=1)
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (!event.origin.includes("youtube.com")) return;
+      
+      let data;
+      try {
+        data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      } catch (e) {
+        return;
+      }
+
+      // Check for both onStateChange and infoDelivery (common with manual postMessage)
+      let playerState = -1;
+      if (data.event === "onStateChange") {
+        playerState = data.info;
+      } else if (data.event === "infoDelivery" && data.info && data.info.playerState !== undefined) {
+        playerState = data.info.playerState;
+      }
+
+      // YouTube Player API: playerState 1 is playing
+      if (playerState === 1 && !videoPlayedRef.current) {
+        sendGAEvent('event', 'demo_video_played', {
+          event_category: 'engagement',
+          event_label: 'Demo Video'
+        });
+        videoPlayedRef.current = true;
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  const onIframeLoad = () => {
+    if (videoRef.current?.contentWindow) {
+      videoRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: "listening", id: 1 }),
+        "*"
+      );
+    }
+  };
+
+  const handleEditorMount = (editor: any) => {
+    // Track template copy events using DOM event since Monaco doesn't have onDidCopy
+    const domNode = editor.getDomNode();
+    if (!domNode) return;
+
+    domNode.addEventListener('copy', () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+
+      copyTimeoutRef.current = setTimeout(() => {
+        const selection = editor.getSelection();
+        const model = editor.getModel();
+        if (!selection || !model) return;
+
+        const copiedText = model.getValueInRange(selection);
+        const fullText = model.getValue();
+        if (!fullText || !copiedText) return;
+        
+        const ratio = copiedText.length / fullText.length;
+        let amount: 'low' | 'medium' | 'high' = 'low';
+        
+        if (ratio > 0.6) {
+          amount = 'high';
+        } else if (ratio > 0.25) {
+          amount = 'medium';
+        }
+        
+        sendGAEvent('event', 'template_copied', {
+          event_category: 'engagement',
+          event_label: 'Template Editor',
+          copy_amount: amount,
+          copy_percentage: Math.round(ratio * 100)
+        });
+        
+        copyTimeoutRef.current = null;
+      }, 500); // 500ms debounce
+    });
   };
 
   const handleSendMessage = async () => {
@@ -332,10 +445,13 @@ export default function Home() {
             <div className={styles.modalBody}>
               <div className={styles.videoContainer}>
                 <iframe 
-                  src="https://www.youtube.com/embed/VPaXE7Jv6xg?autoplay=1" 
-                  title="Albus Demo Video"                  frameBorder="0"
+                  ref={videoRef}
+                  src={`https://www.youtube.com/embed/VPaXE7Jv6xg?autoplay=1&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+                  title="Albus Demo Video"
+                  frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
+                  onLoad={onIframeLoad}
                 ></iframe>
               </div>
             </div>
@@ -395,7 +511,13 @@ export default function Home() {
             <div className={styles.headerActions}>
               <button
                 className={styles.githubLink}
-                onClick={() => setIsDemoModalOpen(true)}
+                onClick={() => {
+                  sendGAEvent('event', 'watch_demo_clicked', {
+                    event_category: 'engagement',
+                    event_label: 'Demo Video'
+                  });
+                  setIsDemoModalOpen(true);
+                }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
               >
                 <Play size={12} fill="currentColor" />
@@ -406,6 +528,10 @@ export default function Home() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className={styles.githubLink}
+                onClick={() => sendGAEvent('event', 'star_clicked', {
+                  event_category: 'engagement',
+                  event_label: 'GitHub Repo'
+                })}
               >
                 <Star size={14} />
                 Star
@@ -435,6 +561,7 @@ export default function Home() {
               theme={editorTheme}
               value={editor1Content}
               onChange={(value) => setEditor1Content(value)}
+              onMount={handleEditorMount}
               options={{
                 minimap: { enabled: false },
                 fontSize: 14,
