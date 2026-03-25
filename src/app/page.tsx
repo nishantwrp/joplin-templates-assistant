@@ -22,7 +22,7 @@ import {
   ThumbsDown,
   Heart,
   ExternalLink,
-  Github
+  Star
 } from "lucide-react";
 import { sendGAEvent } from '@next/third-parties/google';
 import { joplin, createNoteWithTemplate } from "../../fake-joplin";
@@ -89,6 +89,19 @@ export default function Home() {
   // Demo Modal State
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [dontShowDemoAgain, setDontShowDemoAgain] = useState(false);
+  const [starCount, setStarCount] = useState<number | null>(null);
+
+  // Fetch star count
+  useEffect(() => {
+    fetch("https://api.github.com/repos/nishantwrp/joplin-templates-assistant")
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data.stargazers_count === "number") {
+          setStarCount(data.stargazers_count);
+        }
+      })
+      .catch(err => console.error("Error fetching star count:", err));
+  }, []);
 
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -394,8 +407,20 @@ export default function Home() {
                 rel="noopener noreferrer"
                 className={styles.githubLink}
               >
-                <Github size={14} />
-                GitHub
+                <Star size={14} />
+                Star
+                {starCount !== null && (
+                  <span style={{ 
+                    marginLeft: '4px',
+                    background: 'var(--button-secondary-hover)',
+                    padding: '1px 6px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    border: '1px solid var(--button-secondary-border)'
+                  }}>
+                    {starCount}
+                  </span>
+                )}
               </a>
               <button className={styles.tryButton} onClick={handleTryItOut}>
                 <Play size={12} fill="currentColor" />
