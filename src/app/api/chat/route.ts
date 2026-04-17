@@ -74,8 +74,11 @@ export async function POST(req: NextRequest) {
       is hardcoded to "en-US", user date format is hardcoded to "YYYY-MM-DD" and time format is hardcoded to "HH:mm".
       The playground doesn't support any settings, menu options, plugin functions like "default templates", etc.
 
-      Note that users ultimately want templates in context of their real joplin app. If the user has question around the features
-      not supported in playground, please answer using the plugin documentation.
+      Note that users ultimately want templates in context of their real joplin app. Therfore,
+        1. DO NOT use "current-notebook-id", etc. ids in the suggested template. This only works in the playground
+           environment. In general, avoid templates that only work in the playground environment assumptions.
+        2. If the user has question around the features not supported in playground, please answer using the plugin
+           documentation.
     
       The plugin internally uses Handlebars.js for templating. Please refer to the following
       plugin documentation.
