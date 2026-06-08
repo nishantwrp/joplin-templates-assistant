@@ -1,6 +1,6 @@
 {
   "geminiToOpenaiSplitRatio": 0.5,
-  "geminiModel": "gemini-3-flash-preview",
-  "openaiModel": "gpt-4.1-mini",
+  "geminiModel": "gemini-3.5-flash",
+  "openaiModel": "gpt-5.4-nano",
   "timeout_secs": 45
 }
